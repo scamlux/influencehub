@@ -1,0 +1,7 @@
+services:
+  refresh:
+    build: .
+    image: influencehub-discovery
+    container_name: influencehub-refresh
+    env_file: .env
+    restart: unless-stopped

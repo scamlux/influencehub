@@ -1,0 +1,9 @@
+{
+  "name": "influencehub-discovery",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled blogger-discovery jobs (YouTube / Telegram / Apify).",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.47.10"
+  }
+}

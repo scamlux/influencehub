@@ -1,0 +1,19 @@
+{
+  "name": "influencehub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "InfluenceHub — Influencer Marketplace SaaS (monorepo)",
+  "workspaces": ["frontend"],
+  "scripts": {
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "preview": "npm run preview --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "typecheck": "npm run typecheck --workspace frontend",
+    "format": "npm run format --workspace frontend",
+    "format:check": "npm run format:check --workspace frontend",
+    "test": "npm run test --workspace frontend",
+    "db:reset": "supabase db reset --workdir backend",
+    "functions:serve": "supabase functions serve --workdir backend"
+  }
+}
