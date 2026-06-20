@@ -21,8 +21,12 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, ...props }, ref) => (
+  // Instagram / TikTok / Facebook CDNs reject hot-linked requests that carry a
+  // Referer header (the avatars 403 in the browser). Sending no referrer makes
+  // them serve the image, matching how the daily refresh fetches fresh URLs.
   <AvatarPrimitive.Image
     ref={ref}
+    referrerPolicy="no-referrer"
     className={cn("aspect-square h-full w-full object-cover", className)}
     {...props}
   />
