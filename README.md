@@ -59,6 +59,12 @@ layer in `frontend/src/lib/mock-data.ts` — every page is browsable offline.
    - `004_realtime.sql` — realtime publication + notification triggers
    - `005_admin_subscriptions.sql` — admin update policy for subscriptions
    - `006_country.sql` — `country` column on influencer profiles
+   - `007_real_bloggers.sql` — removes the seeded fakes and loads the real CIS
+     blogger base (`docs/CIS_Influencers_База.xlsx`); see
+     [`docs/REAL_BLOGGERS_SETUP.md`](docs/REAL_BLOGGERS_SETUP.md)
+   - `008_daily_refresh.sql` — pg_cron settings store + first-pass worker
+   - `009_pgcron_apify_refresh.sql` — in-DB daily refresh of followers,
+     engagement & avatars (Apify + YouTube via the `http` extension)
 
 2. Deploy the edge functions:
 
