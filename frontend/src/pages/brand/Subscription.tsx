@@ -45,8 +45,18 @@ export default function BrandSubscription() {
       if (!(res && "redirected" in res)) {
         toast({ title: t("common.success"), variant: "success" });
       }
-    } catch {
-      toast({ title: t("common.error"), variant: "error" });
+    } catch (e) {
+      // Surface a clear message instead of a generic "something went wrong" —
+      // most commonly the payment provider isn't configured on this deployment.
+      const msg = e instanceof Error && e.message ? e.message : "";
+      toast({
+        title:
+          method === "stripe"
+            ? t("subscription.payStripe")
+            : t("subscription.payPayme"),
+        description: msg || t("subscription.paymentUnavailable"),
+        variant: "error",
+      });
     } finally {
       setProcessing(false);
     }

@@ -128,7 +128,7 @@ export default function Compare() {
             </Row>
             <Row label={t("influencer.city")}>
               {list.map((i) => (
-                <Cell key={i.id}>{i.city}</Cell>
+                <Cell key={i.id}>{i.city ?? "—"}</Cell>
               ))}
             </Row>
             <Row label={t("league.platform")}>

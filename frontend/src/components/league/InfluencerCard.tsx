@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PlatformIcon } from "@/components/icons";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, initials, cn } from "@/lib/utils";
+import { formatNumber, formatEr, initials, cn } from "@/lib/utils";
 import type { InfluencerFull } from "@/types";
 
 export function InfluencerCard({
@@ -48,7 +48,7 @@ export function InfluencerCard({
         </div>
         <div>
           <div className="font-bold text-success-foreground dark:drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]">
-            {influencer.engagement_rate?.toFixed(1)}%
+            {formatEr(influencer.engagement_rate)}
           </div>
           <div className="text-xs text-muted-foreground">{t("league.engagement")}</div>
         </div>

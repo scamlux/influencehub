@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlatformIcon } from "@/components/icons";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, initials, timeAgo, cn } from "@/lib/utils";
+import { formatNumber, formatEr, initials, timeAgo, cn } from "@/lib/utils";
 import type { InfluencerFull } from "@/types";
 
 const medalColor = ["text-yellow-500", "text-slate-400", "text-amber-700"];
@@ -114,7 +114,7 @@ export function InfluencerRow({
           </div>
           <div className="flex flex-col items-end">
             <span className="font-bold text-success-foreground">
-              {influencer.engagement_rate?.toFixed(1)}%
+              {formatEr(influencer.engagement_rate)}
             </span>
             <span className="text-xs text-muted-foreground">{t("league.engagement")}</span>
           </div>
@@ -131,7 +131,7 @@ export function InfluencerRow({
 
       <div className="hidden w-20 flex-col text-right sm:flex">
         <span className="font-semibold text-success-foreground">
-          {influencer.engagement_rate?.toFixed(1)}%
+          {formatEr(influencer.engagement_rate)}
         </span>
         <span className="text-xs text-muted-foreground">{t("league.engagement")}</span>
       </div>

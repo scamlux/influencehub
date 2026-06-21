@@ -118,6 +118,7 @@ const en: Dict = {
   "subscription.manage": "Manage Subscription",
   "subscription.payStripe": "Pay with Stripe",
   "subscription.payPayme": "Pay with PayMe",
+  "subscription.paymentUnavailable": "Online payment isn’t available yet. Please try again later.",
 
   // dashboard
   "dashboard.welcome": "Welcome back",
@@ -508,6 +509,7 @@ const uz: Dict = {
   "subscription.manage": "Obunani boshqarish",
   "subscription.payStripe": "Stripe orqali to‘lash",
   "subscription.payPayme": "PayMe orqali to‘lash",
+  "subscription.paymentUnavailable": "Onlayn to‘lov hozircha mavjud emas. Keyinroq urinib ko‘ring.",
 
   "dashboard.welcome": "Xush kelibsiz",
   "dashboard.overview": "Umumiy ko‘rinish",

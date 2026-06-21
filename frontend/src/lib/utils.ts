@@ -11,6 +11,12 @@ export function formatNumber(n: number): string {
   return `${n}`;
 }
 
+// Engagement rate for display: "4.2%" or "—" when it hasn't been collected yet
+// (e.g. a profile the social provider didn't return). Never renders a bare "%".
+export function formatEr(er: number | null | undefined): string {
+  return er != null ? `${er.toFixed(1)}%` : "—";
+}
+
 export function formatUSD(n: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

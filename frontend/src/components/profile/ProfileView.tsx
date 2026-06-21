@@ -13,7 +13,7 @@ import { DiscountsSection } from "./DiscountsSection";
 import { influencers, favorites } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, timeAgo, initials, cn } from "@/lib/utils";
+import { formatNumber, formatEr, timeAgo, initials, cn } from "@/lib/utils";
 import type { AnalyticsHistory, InfluencerFull } from "@/types";
 
 export function ProfileView({
@@ -77,9 +77,11 @@ export function ProfileView({
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Badge variant="secondary">{t(`category.${influencer.category}`)}</Badge>
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" /> {influencer.city}
-              </span>
+              {influencer.city && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" /> {influencer.city}
+                </span>
+              )}
               <span>·</span>
               <span>
                 {t("profile.lastSynced")} {timeAgo(influencer.last_synced)}
@@ -108,7 +110,7 @@ export function ProfileView({
           <div className="flex flex-col items-center gap-2">
             <div className="text-center">
               <div className="text-3xl font-bold text-success-foreground">
-                {influencer.engagement_rate?.toFixed(1)}%
+                {formatEr(influencer.engagement_rate)}
               </div>
               <div className="text-xs text-muted-foreground">{t("league.engagement")}</div>
             </div>

@@ -17,7 +17,7 @@ export default function BrandDeals() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!user) return;
+    if (!user) return setLoading(false);
     const bp = await brands.profileForUser(user.id);
     if (!bp) return setLoading(false);
     const list = await dealApi.forBrand(bp.id);
