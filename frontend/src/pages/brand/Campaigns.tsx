@@ -64,6 +64,7 @@ export default function BrandCampaigns() {
             <CampaignCard
               key={c.id}
               campaign={c}
+              to={`/brand/campaigns/${c.id}`}
               footer={
                 <Button asChild variant="outline" className="w-full">
                   <Link to={`/brand/campaigns/${c.id}`}>

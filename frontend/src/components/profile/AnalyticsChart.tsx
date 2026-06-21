@@ -57,40 +57,46 @@ export function AnalyticsChart({ history }: { history: AnalyticsHistory[] }) {
         <CardTitle>{t("profile.growth")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={260}>
-          <LineChart data={data} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: axisStroke }}
-              stroke={axisStroke}
-              interval={4}
-            />
-            <YAxis
-              tickFormatter={(v) => formatNumber(v)}
-              tick={{ fontSize: 11, fill: axisStroke }}
-              stroke={axisStroke}
-              width={48}
-            />
-            <Tooltip
-              formatter={(v: number) => [formatNumber(v), t("league.followers")]}
-              contentStyle={{
-                borderRadius: 12,
-                border: `1px solid ${gridStroke}`,
-                background: TOOLTIP_BG[theme],
-                color: axisStroke,
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="followers"
-              stroke="hsl(330 100% 60%)"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {data.length < 2 ? (
+          <div className="flex h-[260px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
+            {t("profile.growthPending")}
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={data} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: axisStroke }}
+                stroke={axisStroke}
+                interval={4}
+              />
+              <YAxis
+                tickFormatter={(v) => formatNumber(v)}
+                tick={{ fontSize: 11, fill: axisStroke }}
+                stroke={axisStroke}
+                width={48}
+              />
+              <Tooltip
+                formatter={(v: number) => [formatNumber(v), t("league.followers")]}
+                contentStyle={{
+                  borderRadius: 12,
+                  border: `1px solid ${gridStroke}`,
+                  background: TOOLTIP_BG[theme],
+                  color: axisStroke,
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="followers"
+                stroke="hsl(330 100% 60%)"
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

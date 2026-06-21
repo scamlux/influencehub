@@ -1,7 +1,7 @@
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LeagueView } from "@/components/league/LeagueView";
-import { PageHeader, PageLoader, ErrorState } from "@/components/common";
+import { PageHeader, LeagueSkeleton, ErrorState } from "@/components/common";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useInfluencers } from "@/hooks/useInfluencers";
@@ -33,7 +33,7 @@ export default function BrandLeague() {
         </Card>
       )}
       {loading ? (
-        <PageLoader />
+        <LeagueSkeleton />
       ) : error ? (
         <ErrorState onRetry={() => window.location.reload()} />
       ) : (

@@ -104,6 +104,7 @@ const en: Dict = {
   "profile.lastSynced": "Last synced",
   "profile.verified": "Verified",
   "profile.growth": "Follower Growth",
+  "profile.growthPending": "Not enough history yet — growth will appear as daily data builds up.",
 
   // subscription
   "subscription.title": "Choose Your Plan",
@@ -496,6 +497,7 @@ const uz: Dict = {
   "profile.lastSynced": "Oxirgi yangilanish",
   "profile.verified": "Tasdiqlangan",
   "profile.growth": "Obunachilar o‘sishi",
+  "profile.growthPending": "Tarix hali yetarli emas — ma’lumot to‘planishi bilan o‘sish ko‘rinadi.",
 
   "subscription.title": "Tarifingizni tanlang",
   "subscription.subtitle": "InfluenceHub imkoniyatlarini to‘liq oching",

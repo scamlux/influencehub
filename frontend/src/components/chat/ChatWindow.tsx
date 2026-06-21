@@ -8,13 +8,33 @@ import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { PageLoader } from "@/components/common";
+import { deals, campaigns, influencers } from "@/lib/api";
 
 export function ChatWindow({ dealId, backTo }: { dealId: string; backTo: string }) {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { items, loading, send } = useMessages(dealId);
   const [text, setText] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Resolve a human-readable subtitle ("Blogger · Campaign") instead of a UUID.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const deal = await deals.get(dealId);
+      if (!deal) return;
+      const [inf, camp] = await Promise.all([
+        influencers.get(deal.influencer_id),
+        campaigns.get(deal.campaign_id),
+      ]);
+      const parts = [inf?.display_name, camp?.title].filter(Boolean);
+      if (active && parts.length) setSubtitle(parts.join(" · "));
+    })();
+    return () => {
+      active = false;
+    };
+  }, [dealId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,8 +57,10 @@ export function ChatWindow({ dealId, backTo }: { dealId: string; backTo: string 
           </Link>
         </Button>
         <div>
-          <p className="font-semibold">{t("chat.title")}</p>
-          <p className="text-xs text-muted-foreground">Deal #{dealId.slice(0, 8)}</p>
+          <p className="font-semibold">{subtitle || t("chat.title")}</p>
+          <p className="text-xs text-muted-foreground">
+            {subtitle ? t("chat.title") : `Deal #${dealId.slice(0, 8)}`}
+          </p>
         </div>
       </div>
 

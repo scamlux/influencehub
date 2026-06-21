@@ -50,10 +50,7 @@ export default function BrandSubscription() {
       // most commonly the payment provider isn't configured on this deployment.
       const msg = e instanceof Error && e.message ? e.message : "";
       toast({
-        title:
-          method === "stripe"
-            ? t("subscription.payStripe")
-            : t("subscription.payPayme"),
+        title: method === "stripe" ? t("subscription.payStripe") : t("subscription.payPayme"),
         description: msg || t("subscription.paymentUnavailable"),
         variant: "error",
       });
