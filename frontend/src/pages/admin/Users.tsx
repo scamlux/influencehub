@@ -22,12 +22,14 @@ import { PageHeader, EmptyState } from "@/components/common";
 import { Pagination, usePagination } from "@/components/ui/pagination";
 import { admin } from "@/lib/api";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useToast } from "@/components/ui/toast";
 import type { UserRole } from "@/types";
 
 type AdminUser = Awaited<ReturnType<typeof admin.allUsers>>[number];
 
 export default function AdminUsers() {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
 
@@ -92,8 +94,17 @@ export default function AdminUsers() {
                     <Select
                       value={u.role ?? undefined}
                       onValueChange={async (v) => {
-                        await admin.setUserRole(u.id, v as UserRole);
-                        refresh();
+                        try {
+                          await admin.setUserRole(u.id, v as UserRole);
+                          refresh();
+                          toast({ title: t("common.success"), variant: "success" });
+                        } catch (e) {
+                          toast({
+                            title: t("common.error"),
+                            description: e instanceof Error ? e.message : undefined,
+                            variant: "error",
+                          });
+                        }
                       }}
                     >
                       <SelectTrigger className="h-8 w-36">

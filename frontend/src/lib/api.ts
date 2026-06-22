@@ -1102,8 +1102,10 @@ export const messages = {
   subscribeToDeal(dealId: string, cb: (m: Message) => void): () => void {
     if (!USE_MOCK_DATA && supabase) {
       const sb = supabase;
+      // Unique topic per subscription: a shared name would let StrictMode's
+      // double-mount call .on() on an already-subscribed channel (which throws).
       const ch = sb
-        .channel(`messages:deal:${dealId}`)
+        .channel(`messages:deal:${dealId}:${crypto.randomUUID()}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "messages", filter: `deal_id=eq.${dealId}` },
@@ -1182,8 +1184,10 @@ export const notifications = {
   subscribeForUser(userId: string, cb: () => void): () => void {
     if (!USE_MOCK_DATA && supabase) {
       const sb = supabase;
+      // Unique topic per subscription (see subscribeToDeal): avoids re-adding a
+      // callback to an already-subscribed channel on StrictMode remounts.
       const ch = sb
-        .channel(`notifications:user:${userId}`)
+        .channel(`notifications:user:${userId}:${crypto.randomUUID()}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },

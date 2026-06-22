@@ -41,9 +41,10 @@ export default function BrandSubscription() {
     try {
       const res = await checkout("brand_pro", method);
       // If the provider redirected to hosted checkout the page is already
-      // navigating away; only toast for the direct-activation path.
+      // navigating away; otherwise the sub was activated directly (no provider
+      // key configured) — give explicit feedback so the button never feels dead.
       if (!(res && "redirected" in res)) {
-        toast({ title: t("common.success"), variant: "success" });
+        toast({ title: t("subscription.activated"), variant: "success" });
       }
     } catch (e) {
       // Surface a clear message instead of a generic "something went wrong" —

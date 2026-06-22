@@ -87,15 +87,23 @@ export default function InfluencerProfile() {
 
   const save = async () => {
     if (!inf) return;
-    await influencers.update(inf.id, {
-      display_name: form.display_name,
-      bio: form.bio,
-      category: form.category,
-      city: form.city,
-      is_visible: form.is_visible,
-      avatar_url: form.avatar_url || null,
-    });
-    toast({ title: t("common.success"), variant: "success" });
+    try {
+      await influencers.update(inf.id, {
+        display_name: form.display_name,
+        bio: form.bio,
+        category: form.category,
+        city: form.city,
+        is_visible: form.is_visible,
+        avatar_url: form.avatar_url || null,
+      });
+      toast({ title: t("common.success"), variant: "success" });
+    } catch (e) {
+      toast({
+        title: t("common.error"),
+        description: e instanceof Error ? e.message : undefined,
+        variant: "error",
+      });
+    }
   };
 
   if (loading) return <PageLoader />;

@@ -120,6 +120,7 @@ const en: Dict = {
   "subscription.payStripe": "Pay with Stripe",
   "subscription.payPayme": "Pay with PayMe",
   "subscription.paymentUnavailable": "Online payment isn’t available yet. Please try again later.",
+  "subscription.activated": "Brand Pro activated!",
 
   // dashboard
   "dashboard.welcome": "Welcome back",
@@ -512,6 +513,7 @@ const uz: Dict = {
   "subscription.payStripe": "Stripe orqali to‘lash",
   "subscription.payPayme": "PayMe orqali to‘lash",
   "subscription.paymentUnavailable": "Onlayn to‘lov hozircha mavjud emas. Keyinroq urinib ko‘ring.",
+  "subscription.activated": "Brand Pro faollashtirildi!",
 
   "dashboard.welcome": "Xush kelibsiz",
   "dashboard.overview": "Umumiy ko‘rinish",

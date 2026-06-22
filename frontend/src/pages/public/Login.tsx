@@ -116,7 +116,8 @@ export default function Login() {
             Seeded demo accounts — password: Password123!
           </p>
           <p>
-            brand1@demo.influencehub.app · inf1@demo.influencehub.app · admin1@demo.influencehub.app
+            brand1@demo.influencehub.app · test-inf1@demo.influencehub.app ·
+            admin1@demo.influencehub.app
           </p>
         </div>
       )}

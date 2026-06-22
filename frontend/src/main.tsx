@@ -14,7 +14,9 @@ import "./index.css";
 // in-memory mock layer. A leftover `influencehub_session` (a mock user id like
 // "brand-user-0007") otherwise leaks into Supabase queries as a bogus UUID.
 if (!USE_MOCK_DATA) {
-  ["influencehub_session", "influencehub_mockdb_v2"].forEach((k) => localStorage.removeItem(k));
+  ["influencehub_session", "influencehub_mockdb_v1", "influencehub_mockdb_v2"].forEach((k) =>
+    localStorage.removeItem(k),
+  );
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
