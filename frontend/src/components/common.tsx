@@ -15,7 +15,7 @@ export function PageLoader() {
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
+  return <div className={cn("shimmer rounded-md bg-muted/70", className)} />;
 }
 
 /** Placeholder rows for the Blogger League while it loads (feels faster than a spinner). */
@@ -31,6 +31,28 @@ export function LeagueSkeleton({ rows = 8 }: { rows?: number }) {
             <Skeleton className="h-3 w-1/4" />
           </div>
           <Skeleton className="hidden h-8 w-20 sm:block" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Grid of card-shaped skeletons — used while card grids load (beats a spinner). */
+export function CardGridSkeleton({ count = 4, className }: { count?: number; className?: string }) {
+  return (
+    <div className={cn("grid gap-6 sm:grid-cols-2 lg:grid-cols-4", className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+          </div>
+          <Skeleton className="mt-4 h-3 w-full" />
+          <Skeleton className="mt-2 h-3 w-4/5" />
+          <Skeleton className="mt-4 h-9 w-full rounded-lg" />
         </div>
       ))}
     </div>
@@ -134,23 +156,23 @@ export function StatCard({
 }) {
   return (
     <div
-      className="animate-slide-up rounded-xl border bg-card p-5 shadow-sm dark:border dark:border-border dark:bg-white/5 dark:backdrop-blur-sm"
+      className="hover-lift animate-slide-up rounded-xl border bg-card p-5 shadow-sm dark:bg-white/[0.03]"
       style={delay ? { animationDelay: `${delay}s` } : undefined}
     >
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">{label}</span>
         <div
           className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-lg",
+            "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
             accent
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-foreground dark:bg-primary/20 dark:text-primary",
+              ? "bg-primary text-primary-foreground shadow-glow"
+              : "bg-secondary text-foreground dark:bg-primary/15 dark:text-primary",
           )}
         >
           <Icon className="h-5 w-5" />
         </div>
       </div>
-      <div className="mt-3 text-2xl font-bold">{value}</div>
+      <div className="mt-3 text-2xl font-bold tracking-tight tabular">{value}</div>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
