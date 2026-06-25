@@ -116,3 +116,6 @@ environment variables (omit them to ship the mock-mode demo).
 
 Backend (Supabase) is deployed separately via the migrations + `functions deploy`
 steps above.
+
+
+Для анимаций используем библиотеку motion (motion/react), а не CSS-переходы

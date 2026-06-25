@@ -12,6 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatCard, PageHeader } from "@/components/common";
+import { AnimatedCounter, Stagger, StaggerItem } from "@/components/motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -70,14 +71,14 @@ export default function BrandDashboard() {
         <StatCard
           icon={Heart}
           label={t("dashboard.totalFavorites")}
-          value={favCount}
+          value={<AnimatedCounter value={favCount} />}
           hint={t("dashboard.savedBloggers")}
           delay={0}
         />
         <StatCard
           icon={Handshake}
           label={t("dashboard.activeDeals")}
-          value={dealCount}
+          value={<AnimatedCounter value={dealCount} />}
           hint={t("dashboard.allTimeDeals")}
           delay={0.1}
         />
@@ -91,17 +92,21 @@ export default function BrandDashboard() {
       </div>
 
       {!isBrandPro && (
-        <Card className="mt-6 overflow-hidden border-0">
-          <div className="gradient-primary p-6 text-white">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <Card className="relative mt-6 overflow-hidden border-0 shadow-glow-lg">
+          <div className="relative gradient-primary p-6 text-primary-foreground">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-grid opacity-20 [mask-image:radial-gradient(ellipse_at_right,#000,transparent_70%)]"
+            />
+            <div className="relative flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div>
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5" />
-                  <h2 className="text-xl font-bold">{t("dashboard.unlockTitle")}</h2>
+                  <h2 className="text-xl font-bold tracking-tight">{t("dashboard.unlockTitle")}</h2>
                 </div>
-                <p className="mt-1 text-white/90">{t("dashboard.unlockDesc")}</p>
+                <p className="mt-1 text-primary-foreground/90">{t("dashboard.unlockDesc")}</p>
               </div>
-              <Button asChild variant="secondary">
+              <Button asChild size="lg" className="bg-white font-semibold text-primary hover:bg-white/90">
                 <Link to="/brand/subscription">
                   {t("dashboard.subscribeNow")} <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -111,25 +116,30 @@ export default function BrandDashboard() {
         </Card>
       )}
 
-      <h2 className="mb-3 mt-8 text-lg font-semibold">{t("dashboard.quickActions")}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <h2 className="mb-3 mt-8 text-lg font-semibold tracking-tight">{t("dashboard.quickActions")}</h2>
+      <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {quickActions.map((a) => (
-          <Link key={a.to} to={a.to}>
-            <Card className="h-full transition-all hover:-translate-y-0.5 hover:shadow-md dark:bg-card dark:border dark:border-border dark:hover:bg-secondary">
-              <CardContent className="p-5">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 dark:bg-primary/20">
-                  <a.icon className="h-5 w-5 text-primary" />
-                </div>
-                <p className="font-semibold">{a.title}</p>
-                <p className="text-sm text-muted-foreground">{a.sub}</p>
-              </CardContent>
-            </Card>
-          </Link>
+          <StaggerItem key={a.to} className="h-full">
+            <Link to={a.to} className="block h-full">
+              <Card interactive className="group h-full">
+                <CardContent className="p-5">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                    <a.icon className="h-5 w-5" />
+                  </div>
+                  <p className="flex items-center gap-1 font-semibold">
+                    {a.title}
+                    <ArrowRight className="h-4 w-4 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                  </p>
+                  <p className="text-sm text-muted-foreground">{a.sub}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
 
-      <h2 className="mb-3 mt-8 text-lg font-semibold">{t("dashboard.recentActivity")}</h2>
-      <Card className="dark:bg-card dark:border dark:border-border">
+      <h2 className="mb-3 mt-8 text-lg font-semibold tracking-tight">{t("dashboard.recentActivity")}</h2>
+      <Card>
         <CardContent className="p-10 text-center text-sm text-muted-foreground">
           {t("dashboard.emptyActivity")}
         </CardContent>

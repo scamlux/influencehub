@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { MotionConfig } from "motion/react";
 import App from "./App";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./hooks/useAuth";
@@ -22,17 +23,19 @@ if (!USE_MOCK_DATA) {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <LanguageProvider>
-          <AuthProvider>
-            <CompareProvider>
-              <ToastProvider>
-                <App />
-              </ToastProvider>
-            </CompareProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </BrowserRouter>
+      <MotionConfig reducedMotion="user">
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <LanguageProvider>
+            <AuthProvider>
+              <CompareProvider>
+                <ToastProvider>
+                  <App />
+                </ToastProvider>
+              </CompareProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </BrowserRouter>
+      </MotionConfig>
     </ThemeProvider>
   </React.StrictMode>,
 );

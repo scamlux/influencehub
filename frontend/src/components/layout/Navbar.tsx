@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Sparkles, Menu, X } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,18 +25,18 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100/80 bg-white/80 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/70 dark:border-white/10 dark:bg-black/40 dark:shadow-none dark:supports-[backdrop-filter]:bg-black/40">
+    <header className="sticky top-0 z-sticky w-full border-b bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-            <Sparkles className="h-5 w-5 text-white" />
+        <Link to="/" className="group flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-glow transition-transform duration-200 group-hover:scale-105">
+            <Sparkles className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-bold">
-            Influence<span className="text-primary">Hub</span>
+          <span className="text-lg font-bold tracking-tight">
+            Influence<span className="text-gradient">Hub</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-1 md:flex">
           {navLinks.map((l) => (
             <NavLink
               key={l.to}
@@ -43,12 +44,23 @@ export function Navbar() {
               end={l.to === "/"}
               className={({ isActive }) =>
                 cn(
-                  "text-sm font-medium transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  "relative rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )
               }
             >
-              {l.label}
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-active"
+                      className="absolute inset-0 -z-10 rounded-lg bg-secondary"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  {l.label}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
@@ -70,7 +82,7 @@ export function Navbar() {
               <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
                 {t("nav.login")}
               </Button>
-              <Button size="sm" onClick={() => navigate("/register")}>
+              <Button variant="gradient" size="sm" onClick={() => navigate("/register")}>
                 {t("nav.register")}
               </Button>
             </>
@@ -94,7 +106,12 @@ export function Navbar() {
 
       {/* Mobile dropdown panel */}
       {open && (
-        <div className="border-t bg-background md:hidden">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          className="border-t bg-background md:hidden"
+        >
           <nav className="container flex flex-col gap-1 py-3">
             {navLinks.map((l) => (
               <NavLink
@@ -139,6 +156,7 @@ export function Navbar() {
                   {t("nav.login")}
                 </Button>
                 <Button
+                  variant="gradient"
                   className="w-full"
                   onClick={() => {
                     setOpen(false);
@@ -157,7 +175,7 @@ export function Navbar() {
               <LanguageToggle />
             </div>
           </nav>
-        </div>
+        </motion.div>
       )}
     </header>
   );
