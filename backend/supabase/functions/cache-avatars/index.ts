@@ -73,14 +73,22 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { influencer_id, force = false } = body as { influencer_id?: string; force?: boolean };
     const limit = Math.min(Number(body?.limit ?? 20), 40);
+    const offset = Math.max(0, Number(body?.offset ?? 0));
 
     const admin = adminClient();
     await admin.storage.createBucket(BUCKET, { public: true }).catch(() => {});
 
     // Working set: one blogger, or a batch still missing a cached avatar.
-    let targetIds: string[] = [];
+    // `existing` keeps each target's current avatar_url so we can simply re-host
+    // a fresh CDN URL (written by the daily refresh) without re-hitting Apify.
+    const existing = new Map<string, string | null>();
     if (influencer_id) {
-      targetIds = [influencer_id];
+      const { data } = await admin
+        .from("influencer_profiles")
+        .select("avatar_url")
+        .eq("id", influencer_id)
+        .maybeSingle();
+      existing.set(influencer_id, data?.avatar_url ?? null);
     } else {
       const { data, error } = await admin
         .from("influencer_profiles")
@@ -88,12 +96,21 @@ Deno.serve(async (req) => {
         .order("league_rank", { ascending: true, nullsFirst: false })
         .limit(500);
       if (error) return json({ error: error.message }, 500);
-      targetIds = (data ?? [])
-        .filter((r) => force || !r.avatar_url || !r.avatar_url.includes(ON_BUCKET))
-        .slice(0, limit)
-        .map((r) => r.id);
+      const matching = (data ?? []).filter(
+        (r) => force || !r.avatar_url || !r.avatar_url.includes(ON_BUCKET),
+      );
+      for (const r of matching.slice(offset, offset + limit)) {
+        existing.set(r.id, r.avatar_url ?? null);
+      }
     }
+    const targetIds = [...existing.keys()];
     if (targetIds.length === 0) return json({ processed: 0, updated: 0, skipped: 0, failures: [] });
+
+    // A usable, already-fetched photo URL we can just re-host (not on our bucket).
+    const rehostUrl = (id: string) => {
+      const u = existing.get(id);
+      return u && /^https?:\/\//.test(u) && !u.includes(ON_BUCKET) ? u : null;
+    };
 
     // Connected platforms for the whole batch in one query.
     const { data: socials } = await admin
@@ -109,8 +126,9 @@ Deno.serve(async (req) => {
       if (s.platform === "youtube" && !yt.has(s.influencer_id)) yt.set(s.influencer_id, clean(s.username));
     }
 
-    // One Apify run for every Instagram handle in the batch.
-    const igMap = await instagramPics([...new Set(ig.values())]);
+    // Only resolve via Apify for bloggers without an already-fetched URL to re-host.
+    const needApify = targetIds.filter((id) => !rehostUrl(id) && ig.has(id)).map((id) => ig.get(id)!);
+    const igMap = await instagramPics([...new Set(needApify)]);
 
     let updated = 0;
     let skipped = 0;
@@ -118,9 +136,10 @@ Deno.serve(async (req) => {
 
     for (const id of targetIds) {
       try {
-        let picUrl: string | null = null;
+        // Prefer re-hosting an already-fetched URL; else resolve fresh.
+        let picUrl: string | null = rehostUrl(id);
         const igHandle = ig.get(id);
-        if (igHandle && igMap[igHandle]) picUrl = igMap[igHandle];
+        if (!picUrl && igHandle && igMap[igHandle]) picUrl = igMap[igHandle];
         if (!picUrl && yt.has(id)) picUrl = await youtubePic(yt.get(id)!);
         if (!picUrl) {
           skipped++;
