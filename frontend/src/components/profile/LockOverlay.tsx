@@ -15,16 +15,22 @@ export function LockOverlay({
 }) {
   const { t } = useLanguage();
   if (!locked) return <>{children}</>;
+
+  // When locked we don't reveal the real (often empty) content — we show a
+  // consistent blurred placeholder so every locked card has the same height and
+  // clearly reads as "there's something premium to unlock here".
   return (
-    <div className="relative">
-      <div className="pointer-events-none select-none blur-sm" aria-hidden>
-        {children}
+    <div className="relative min-h-[132px] overflow-hidden rounded-lg">
+      <div aria-hidden className="select-none space-y-3 opacity-60 blur-[7px]">
+        <div className="h-4 w-3/5 rounded-full bg-muted-foreground/25" />
+        <div className="h-4 w-2/5 rounded-full bg-muted-foreground/25" />
+        <div className="h-4 w-1/2 rounded-full bg-muted-foreground/25" />
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl bg-background/60 backdrop-blur-[2px]">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Lock className="h-6 w-6 text-primary" />
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg bg-gradient-to-b from-background/30 via-background/60 to-background/85 px-4 text-center backdrop-blur-[2px]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+          <Lock className="h-5 w-5 text-primary" aria-hidden="true" focusable="false" />
         </div>
-        <Button asChild>
+        <Button asChild size="sm" variant="gradient">
           <Link to={subscribeTo}>{t("profile.locked")}</Link>
         </Button>
       </div>

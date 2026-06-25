@@ -80,7 +80,9 @@ export function ProfileView({
               )}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary">{t(`category.${influencer.category}`)}</Badge>
+              <Badge variant="secondary" className="h-5 px-2 py-0 font-medium leading-none">
+                {t(`category.${influencer.category}`)}
+              </Badge>
               {influencer.city && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" /> {influencer.city}

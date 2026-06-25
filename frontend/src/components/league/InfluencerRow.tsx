@@ -91,17 +91,23 @@ export function InfluencerRow({
               {influencer.display_name}
             </Link>
             {influencer.is_featured && (
-              <Badge className="gradient-primary border-0">{t("league.featured")}</Badge>
+              <Badge className="h-5 shrink-0 gradient-primary border-0 px-2 py-0 text-[10px] font-semibold uppercase leading-none tracking-wide">
+                {t("league.featured")}
+              </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>{influencer.city}</span>
-            <span>·</span>
-            <Badge variant="secondary" className="dark:bg-secondary dark:text-foreground">
+          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            <Badge
+              variant="secondary"
+              className="h-5 shrink-0 px-2 py-0 font-medium leading-none dark:bg-secondary dark:text-foreground"
+            >
               {t(`category.${influencer.category}`)}
             </Badge>
+            {influencer.city && <span className="truncate">{influencer.city}</span>}
             <span className="hidden md:inline">·</span>
-            <span className="hidden md:inline">{timeAgo(influencer.last_synced)}</span>
+            <span className="hidden whitespace-nowrap md:inline">
+              {timeAgo(influencer.last_synced)}
+            </span>
           </div>
         </div>
       </div>

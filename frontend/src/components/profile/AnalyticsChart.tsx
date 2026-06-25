@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { TrendingUp } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -58,8 +59,11 @@ export function AnalyticsChart({ history }: { history: AnalyticsHistory[] }) {
       </CardHeader>
       <CardContent>
         {data.length < 2 ? (
-          <div className="flex h-[260px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
-            {t("profile.growthPending")}
+          <div className="flex h-[180px] flex-col items-center justify-center gap-3 px-6 text-center">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <TrendingUp className="h-5 w-5" aria-hidden="true" focusable="false" />
+            </div>
+            <p className="max-w-xs text-sm text-muted-foreground">{t("profile.growthPending")}</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
