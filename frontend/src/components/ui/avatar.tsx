@@ -65,12 +65,15 @@ export function InfluencerAvatar({
   platforms,
   className,
   fallbackClassName,
+  priority = false,
 }: {
   name: string;
   avatarUrl?: string | null;
   platforms?: { platform: Platform; username: string | null }[];
   className?: string;
   fallbackClassName?: string;
+  /** First/above-the-fold avatar: load eagerly with high fetch priority. */
+  priority?: boolean;
 }) {
   const sources = React.useMemo(
     () => avatarCandidates({ avatarUrl, platforms }),
@@ -108,8 +111,11 @@ export function InfluencerAvatar({
           key={src}
           src={src}
           alt={name}
+          width={96}
+          height={96}
           referrerPolicy="no-referrer"
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
           decoding="async"
           onLoad={() => setLoaded(true)}
           onError={() => {

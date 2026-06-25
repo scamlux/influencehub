@@ -9,7 +9,7 @@ export function Footer() {
       <div className="container flex flex-col items-center justify-between gap-4 py-8 sm:flex-row">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary">
-            <Sparkles className="h-4 w-4 text-white" />
+            <Sparkles className="h-4 w-4 text-white" aria-hidden="true" focusable="false" />
           </div>
           <span className="font-semibold">
             Influence<span className="text-primary">Hub</span>

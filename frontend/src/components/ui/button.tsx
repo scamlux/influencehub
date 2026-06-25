@@ -42,7 +42,7 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading = false, children, disabled, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, type, children, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     // When asChild is set the consumer controls the markup, so don't inject the spinner.
     if (asChild) {
@@ -54,6 +54,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
     return (
       <Comp
+        // Default to "button" so buttons outside a <form> never submit unexpectedly.
+        type={type ?? "button"}
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         disabled={disabled || loading}

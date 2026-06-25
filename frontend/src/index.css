@@ -1,5 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..800&family=JetBrains+Mono:wght@400;500;600&display=swap");
-
+/* Fonts load via <link> in index.html (preconnect + display=swap) to keep them
+   off the CSS critical path. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

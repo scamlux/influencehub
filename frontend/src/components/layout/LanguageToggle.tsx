@@ -14,8 +14,13 @@ export function LanguageToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1.5">
-          <Languages className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          aria-label={`Change language, current: ${lang.toUpperCase()}`}
+        >
+          <Languages className="h-4 w-4" aria-hidden="true" focusable="false" />
           <span className="uppercase">{lang}</span>
         </Button>
       </DropdownMenuTrigger>

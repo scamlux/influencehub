@@ -5,6 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#ff3399" />
+    <link rel="canonical" href="https://famic.vercel.app/" />
+
+    <!-- Fonts: preconnect + non-blocking stylesheet (display=swap) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Avatars + data are served from Supabase Storage; warm the connection early -->
+    <link rel="preconnect" href="https://ceqpcuhguxjdbzuuwamr.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://unavatar.io" crossorigin />
+
     <title>InfluenceHub — Influencer Marketplace</title>
     <meta
       name="description"
@@ -14,12 +28,13 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="InfluenceHub" />
+    <meta property="og:url" content="https://famic.vercel.app/" />
     <meta property="og:title" content="InfluenceHub — Influencer Marketplace" />
     <meta
       property="og:description"
       content="Discover ranked Uzbek creators, run campaigns, and close deals with real-time chat."
     />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="https://famic.vercel.app/og-image.png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -28,7 +43,20 @@
       name="twitter:description"
       content="Discover ranked Uzbek creators, run campaigns, and close deals with real-time chat."
     />
-    <meta name="twitter:image" content="/og-image.png" />
+    <meta name="twitter:image" content="https://famic.vercel.app/og-image.png" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "InfluenceHub",
+        "url": "https://famic.vercel.app",
+        "logo": "https://famic.vercel.app/favicon.svg",
+        "description": "The Influencer Marketplace for Central Asia",
+        "sameAs": []
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -10,9 +10,11 @@ import type { InfluencerFull } from "@/types";
 export function InfluencerCard({
   influencer,
   profileLink,
+  priority = false,
 }: {
   influencer: InfluencerFull;
   profileLink: string;
+  priority?: boolean;
 }) {
   const { t } = useLanguage();
   return (
@@ -32,6 +34,7 @@ export function InfluencerCard({
         name={influencer.display_name}
         avatarUrl={influencer.avatar_url}
         platforms={influencer.platforms}
+        priority={priority}
         className="h-20 w-20 ring-2 ring-primary/20"
         fallbackClassName="text-lg"
       />

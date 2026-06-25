@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { ArrowLeft, BadgeCheck, Heart, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { InfluencerAvatar } from "@/components/ui/avatar";
@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlatformIcon, platformColor } from "@/components/icons";
-import { AnalyticsChart } from "./AnalyticsChart";
+// Recharts is heavy (~380KB) — load it only when a profile is actually viewed.
+const AnalyticsChart = lazy(() =>
+  import("./AnalyticsChart").then((m) => ({ default: m.AnalyticsChart })),
+);
 import { ContactSection } from "./ContactSection";
 import { PricingSection } from "./PricingSection";
 import { DiscountsSection } from "./DiscountsSection";
@@ -140,8 +143,10 @@ export function ProfileView({
         </Card>
       )}
 
-      {/* Analytics — always visible */}
-      <AnalyticsChart history={history} />
+      {/* Analytics — always visible (chart bundle lazy-loaded) */}
+      <Suspense fallback={<div className="h-[332px] animate-pulse rounded-xl border bg-muted/40" />}>
+        <AnalyticsChart history={history} />
+      </Suspense>
 
       {/* Locked sections */}
       <div className="grid gap-6 lg:grid-cols-2">

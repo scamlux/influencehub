@@ -29,14 +29,14 @@ export function Navbar() {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="group flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary shadow-glow transition-transform duration-200 group-hover:scale-105">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
+            <Sparkles className="h-5 w-5 text-primary-foreground" aria-hidden="true" focusable="false" />
           </div>
           <span className="text-lg font-bold tracking-tight">
             Influence<span className="text-gradient">Hub</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
           {navLinks.map((l) => (
             <NavLink
               key={l.to}
@@ -98,8 +98,19 @@ export function Navbar() {
           </span>
           {user && <NotificationBell />}
           {user && <UserMenu />}
-          <Button variant="ghost" size="icon" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Menu"
+            aria-expanded={open}
+            aria-haspopup="menu"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? (
+              <X className="h-5 w-5" aria-hidden="true" focusable="false" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" focusable="false" />
+            )}
           </Button>
         </div>
       </div>
@@ -112,7 +123,7 @@ export function Navbar() {
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           className="border-t bg-background md:hidden"
         >
-          <nav className="container flex flex-col gap-1 py-3">
+          <nav aria-label="Mobile navigation" className="container flex flex-col gap-1 py-3">
             {navLinks.map((l) => (
               <NavLink
                 key={l.to}
