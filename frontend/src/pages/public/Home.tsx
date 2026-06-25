@@ -26,7 +26,10 @@ import { useLanguage } from "@/hooks/useLanguage";
 export default function Home() {
   const { t } = useLanguage();
   const { data, loading } = useInfluencers();
-  const top = data.slice(0, 4);
+  // Showcase local creators first (this is a Central Asia / Uzbekistan
+  // marketplace); fall back to the global top if there aren't enough.
+  const uz = data.filter((i) => i.country === "UZ");
+  const top = (uz.length >= 4 ? uz : data).slice(0, 4);
 
   const features = [
     { icon: Trophy, title: t("home.feature.rankings.title"), desc: t("home.feature.rankings.desc") },
