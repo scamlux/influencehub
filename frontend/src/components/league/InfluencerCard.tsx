@@ -32,7 +32,6 @@ export function InfluencerCard({
         name={influencer.display_name}
         avatarUrl={influencer.avatar_url}
         platforms={influencer.platforms}
-        seed={influencer.id}
         className="h-20 w-20 ring-2 ring-primary/20"
         fallbackClassName="text-lg"
       />

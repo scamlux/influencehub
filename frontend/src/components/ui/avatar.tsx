@@ -63,20 +63,18 @@ export function InfluencerAvatar({
   name,
   avatarUrl,
   platforms,
-  seed,
   className,
   fallbackClassName,
 }: {
   name: string;
   avatarUrl?: string | null;
   platforms?: { platform: Platform; username: string | null }[];
-  seed?: string;
   className?: string;
   fallbackClassName?: string;
 }) {
   const sources = React.useMemo(
-    () => avatarCandidates({ avatarUrl, platforms, seed, name }),
-    [avatarUrl, platforms, seed, name],
+    () => avatarCandidates({ avatarUrl, platforms }),
+    [avatarUrl, platforms],
   );
   const [idx, setIdx] = React.useState(0);
   const [loaded, setLoaded] = React.useState(false);

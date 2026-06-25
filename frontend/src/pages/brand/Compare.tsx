@@ -97,7 +97,6 @@ export default function Compare() {
                       name={inf.display_name}
                       avatarUrl={inf.avatar_url}
                       platforms={inf.platforms}
-                      seed={inf.id}
                       className="h-14 w-14"
                     />
                     <Link

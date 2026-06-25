@@ -83,7 +83,6 @@ export function InfluencerRow({
           name={influencer.display_name}
           avatarUrl={influencer.avatar_url}
           platforms={influencer.platforms}
-          seed={influencer.id}
           className="h-12 w-12"
         />
         <div className="min-w-0">

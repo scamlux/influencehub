@@ -12,23 +12,25 @@ export function instagramHandle(platforms?: PlatformRef[]): string | null {
 const UNAVATAR_SOURCES: Platform[] = ["instagram", "youtube", "tiktok", "telegram"];
 
 /**
- * Ordered list of avatar URLs to try for a blogger. Resolves in priority order
- * and ALWAYS ends with a deterministic photo, so every blogger shows a face:
- *   1. stored avatar_url (the real social photo already in our data)
+ * Ordered list of REAL avatar URLs to try for a blogger — only images that come
+ * from the blogger's own social presence. No generic/placeholder faces: if none
+ * resolve, the caller shows initials instead (never someone else's photo).
+ *
+ *   1. stored avatar_url (the real social photo already scraped into our data)
  *   2. Instagram handle via unavatar.io (real IG profile picture) — preferred
  *   3. any other connected social (youtube / tiktok / telegram) via unavatar.io
- *   4. deterministic placeholder face (i.pravatar.cc) — never 404s
  *
- * `?fallback=false` makes unavatar return 404 (instead of a generic silhouette)
- * when a handle has no picture, so the chain advances to the next candidate.
+ * unavatar.io fetches the blogger's public social page server-side and returns
+ * their current profile picture — doing the "open their page, grab the avatar"
+ * step that a browser can't do directly (CORS + auth walls + expiring CDN URLs).
+ * `?fallback=false` makes it 404 when there's no real picture, so we fall back
+ * to initials rather than a generic silhouette.
  */
 export function avatarCandidates(opts: {
   avatarUrl?: string | null;
   platforms?: PlatformRef[];
-  seed?: string;
-  name?: string;
 }): string[] {
-  const { avatarUrl, platforms, seed, name } = opts;
+  const { avatarUrl, platforms } = opts;
   const out: string[] = [];
 
   if (avatarUrl) out.push(avatarUrl);
@@ -44,10 +46,6 @@ export function avatarCandidates(opts: {
       out.push(`https://unavatar.io/${src}/${encodeURIComponent(handle)}?fallback=false`);
     }
   }
-
-  // Deterministic, always-resolvable face so no blogger is ever avatar-less.
-  const key = (seed || name || "anon").toString();
-  out.push(`https://i.pravatar.cc/300?u=${encodeURIComponent(key)}`);
 
   return out;
 }

@@ -25,7 +25,6 @@ export function BidCard({
             name={influencer?.display_name ?? "?"}
             avatarUrl={influencer?.avatar_url}
             platforms={influencer?.platforms}
-            seed={influencer?.id}
           />
           <div>
             <p className="font-semibold">{influencer?.display_name ?? "Influencer"}</p>

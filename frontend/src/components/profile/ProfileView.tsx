@@ -61,7 +61,6 @@ export function ProfileView({
             name={influencer.display_name}
             avatarUrl={influencer.avatar_url}
             platforms={influencer.platforms}
-            seed={influencer.id}
             className="h-24 w-24 ring-4 ring-primary/10"
             fallbackClassName="text-2xl"
           />

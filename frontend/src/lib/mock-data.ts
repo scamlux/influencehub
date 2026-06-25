@@ -247,7 +247,9 @@ function build(): MockDB {
       city: CITIES[i % CITIES.length],
       is_visible: true,
       league_rank: i + 1,
-      avatar_url: `https://i.pravatar.cc/300?img=${(i % 70) + 1}`,
+      // No placeholder faces: demo bloggers have no real social photo, so they
+      // fall back to initials rather than showing a stranger's face.
+      avatar_url: null,
       onboarding_status: "completed",
       collection_error: null,
       engagement_rate: er,
