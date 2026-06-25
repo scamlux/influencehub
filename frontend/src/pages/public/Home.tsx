@@ -16,6 +16,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { InfluencerCard } from "@/components/league/InfluencerCard";
+import { Marquee } from "@/components/ui/marquee";
 import { CardGridSkeleton } from "@/components/common";
 import { Reveal, Stagger, StaggerItem, AnimatedCounter } from "@/components/motion";
 import { scaleIn } from "@/lib/motion";
@@ -48,6 +49,18 @@ export default function Home() {
     ["Side-by-side comparison", false, true],
     ["Exclusive discounts", false, true],
   ] as const;
+
+  const brands = [
+    "Korzinka",
+    "Uzum Market",
+    "Uzcard",
+    "Click",
+    "Payme",
+    "Humans",
+    "Beeline",
+    "Artel",
+    "MyTaxi",
+  ];
 
   const stats = [
     { value: data.length || 26, format: (n: number) => `${Math.round(n)}+`, label: t("home.stats.creators") },
@@ -136,6 +149,28 @@ export default function Home() {
               </StaggerItem>
             ))}
           </Stagger>
+        </div>
+      </section>
+
+      {/* ---- Trusted by (21st.dev marquee, adapted) ------------------------ */}
+      <section aria-labelledby="trusted-heading" className="border-b py-12">
+        <div className="container">
+          <h2
+            id="trusted-heading"
+            className="mb-7 text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground"
+          >
+            Trusted by leading brands across Central Asia
+          </h2>
+          <Marquee speed="38s">
+            {brands.map((b) => (
+              <span
+                key={b}
+                className="shrink-0 select-none text-xl font-bold tracking-tight text-muted-foreground/60 transition-colors duration-300 hover:text-foreground sm:text-2xl"
+              >
+                {b}
+              </span>
+            ))}
+          </Marquee>
         </div>
       </section>
 
