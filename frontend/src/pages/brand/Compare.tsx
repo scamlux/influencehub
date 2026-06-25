@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { GitCompare, X } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlatformIcon } from "@/components/icons";
@@ -11,7 +11,7 @@ import { influencers } from "@/lib/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCompare, MAX_COMPARE } from "@/hooks/useCompare";
-import { formatNumber, formatUSD, initials } from "@/lib/utils";
+import { formatNumber, formatUSD } from "@/lib/utils";
 import type { AdType, InfluencerFull } from "@/types";
 
 const AD_TYPES: AdType[] = ["post", "story", "video", "reel", "package", "native"];
@@ -93,10 +93,13 @@ export default function Compare() {
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage src={inf.avatar_url ?? undefined} />
-                      <AvatarFallback>{initials(inf.display_name)}</AvatarFallback>
-                    </Avatar>
+                    <InfluencerAvatar
+                      name={inf.display_name}
+                      avatarUrl={inf.avatar_url}
+                      platforms={inf.platforms}
+                      seed={inf.id}
+                      className="h-14 w-14"
+                    />
                     <Link
                       to={`/brand/bloggers/${inf.id}`}
                       className="font-semibold hover:text-primary"

@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { Medal } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlatformIcon } from "@/components/icons";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, formatEr, initials, timeAgo, cn } from "@/lib/utils";
+import { formatNumber, formatEr, timeAgo, cn } from "@/lib/utils";
 import type { InfluencerFull } from "@/types";
 
 const medalColor = ["text-yellow-500", "text-slate-400", "text-amber-700"];
@@ -79,10 +79,13 @@ export function InfluencerRow({
             <span className="text-sm font-bold text-muted-foreground">{rank}</span>
           )}
         </div>
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={influencer.avatar_url ?? undefined} />
-          <AvatarFallback>{initials(influencer.display_name)}</AvatarFallback>
-        </Avatar>
+        <InfluencerAvatar
+          name={influencer.display_name}
+          avatarUrl={influencer.avatar_url}
+          platforms={influencer.platforms}
+          seed={influencer.id}
+          className="h-12 w-12"
+        />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Link to={profileLink} className="truncate font-semibold hover:text-primary">

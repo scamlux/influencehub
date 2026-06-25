@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, BadgeCheck, Heart, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { DiscountsSection } from "./DiscountsSection";
 import { influencers, favorites } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, formatEr, timeAgo, initials, cn } from "@/lib/utils";
+import { formatNumber, formatEr, timeAgo, cn } from "@/lib/utils";
 import type { AnalyticsHistory, InfluencerFull } from "@/types";
 
 export function ProfileView({
@@ -57,12 +57,14 @@ export function ProfileView({
       {/* Header */}
       <Card className="dark:bg-card dark:border-border">
         <CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
-          <Avatar className="h-24 w-24 ring-4 ring-primary/10">
-            <AvatarImage src={influencer.avatar_url ?? undefined} />
-            <AvatarFallback className="text-2xl">
-              {initials(influencer.display_name)}
-            </AvatarFallback>
-          </Avatar>
+          <InfluencerAvatar
+            name={influencer.display_name}
+            avatarUrl={influencer.avatar_url}
+            platforms={influencer.platforms}
+            seed={influencer.id}
+            className="h-24 w-24 ring-4 ring-primary/10"
+            fallbackClassName="text-2xl"
+          />
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold">{influencer.display_name}</h1>

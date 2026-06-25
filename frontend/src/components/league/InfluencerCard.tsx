@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { PlatformIcon } from "@/components/icons";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatNumber, formatEr, initials, cn } from "@/lib/utils";
+import { formatNumber, formatEr, cn } from "@/lib/utils";
 import type { InfluencerFull } from "@/types";
 
 export function InfluencerCard({
@@ -28,10 +28,14 @@ export function InfluencerCard({
           <Star className="h-3 w-3" /> {t("league.featured")}
         </Badge>
       )}
-      <Avatar className="h-20 w-20 ring-2 ring-primary/20">
-        <AvatarImage src={influencer.avatar_url ?? undefined} />
-        <AvatarFallback className="text-lg">{initials(influencer.display_name)}</AvatarFallback>
-      </Avatar>
+      <InfluencerAvatar
+        name={influencer.display_name}
+        avatarUrl={influencer.avatar_url}
+        platforms={influencer.platforms}
+        seed={influencer.id}
+        className="h-20 w-20 ring-2 ring-primary/20"
+        fallbackClassName="text-lg"
+      />
       <h3 className="mt-3 font-semibold group-hover:text-primary">{influencer.display_name}</h3>
       <Badge variant="secondary" className="mt-1">
         {t(`category.${influencer.category}`)}

@@ -1,8 +1,8 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./DealStatusBadge";
 import { useLanguage } from "@/hooks/useLanguage";
-import { formatUSD, initials } from "@/lib/utils";
+import { formatUSD } from "@/lib/utils";
 import type { Bid, InfluencerFull } from "@/types";
 
 export function BidCard({
@@ -21,10 +21,12 @@ export function BidCard({
     <div className="rounded-xl border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Avatar>
-            <AvatarImage src={influencer?.avatar_url ?? undefined} />
-            <AvatarFallback>{initials(influencer?.display_name ?? "?")}</AvatarFallback>
-          </Avatar>
+          <InfluencerAvatar
+            name={influencer?.display_name ?? "?"}
+            avatarUrl={influencer?.avatar_url}
+            platforms={influencer?.platforms}
+            seed={influencer?.id}
+          />
           <div>
             <p className="font-semibold">{influencer?.display_name ?? "Influencer"}</p>
             <p className="text-xs text-muted-foreground">
