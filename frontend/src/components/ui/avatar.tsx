@@ -62,23 +62,20 @@ AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 export function InfluencerAvatar({
   name,
   avatarUrl,
-  platforms,
   className,
   fallbackClassName,
   priority = false,
 }: {
   name: string;
   avatarUrl?: string | null;
+  /** Accepted for call-site convenience; resolution now uses the cached URL only. */
   platforms?: { platform: Platform; username: string | null }[];
   className?: string;
   fallbackClassName?: string;
   /** First/above-the-fold avatar: load eagerly with high fetch priority. */
   priority?: boolean;
 }) {
-  const sources = React.useMemo(
-    () => avatarCandidates({ avatarUrl, platforms }),
-    [avatarUrl, platforms],
-  );
+  const sources = React.useMemo(() => avatarCandidates({ avatarUrl }), [avatarUrl]);
   const [idx, setIdx] = React.useState(0);
   const [loaded, setLoaded] = React.useState(false);
 

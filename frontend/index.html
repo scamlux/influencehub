@@ -7,13 +7,23 @@
     <meta name="theme-color" content="#ff3399" />
     <link rel="canonical" href="https://famic.vercel.app/" />
 
-    <!-- Fonts: preconnect + non-blocking stylesheet (display=swap) -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
+    <!-- Fonts: load async so the stylesheet never render-blocks (FCP). -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-      rel="stylesheet"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      />
+    </noscript>
 
     <!-- Avatars + data are served from Supabase Storage; warm the connection early -->
     <link rel="preconnect" href="https://ceqpcuhguxjdbzuuwamr.supabase.co" crossorigin />
