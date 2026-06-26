@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -22,6 +23,9 @@ import { Reveal, Stagger, StaggerItem, AnimatedCounter } from "@/components/moti
 import { scaleIn } from "@/lib/motion";
 import { useInfluencers } from "@/hooks/useInfluencers";
 import { useLanguage } from "@/hooks/useLanguage";
+
+// three.js stays off every other route — only the landing hero loads it.
+const HeroParticles = lazy(() => import("@/components/three/HeroParticles"));
 
 export default function Home() {
   const { t } = useLanguage();
@@ -75,9 +79,15 @@ export default function Home() {
     <PublicLayout>
       {/* ---- Hero (rendered immediately — no opacity animation, protects LCP) ---- */}
       <section aria-labelledby="hero-heading" className="relative overflow-hidden border-b">
+        {/* Immersive WebGL backdrop (lazy three.js; static gradient shows until/if it loads) */}
+        <Suspense fallback={null}>
+          <div className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,#000_55%,transparent_85%)]">
+            <HeroParticles />
+          </div>
+        </Suspense>
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-[0.5] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_30%,transparent_75%)]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-[0.35] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_30%,transparent_75%)]"
         />
         <div
           aria-hidden="true"
