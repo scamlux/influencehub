@@ -1450,6 +1450,26 @@ export const admin = {
     if (inf) inf.league_rank = rank;
     save();
   },
+  // Persist a drag-to-reorder change: write the new league_rank for every row
+  // whose position changed (caller passes only the diffs).
+  async reorderInfluencers(updates: { id: string; rank: number }[]) {
+    if (!updates.length) return;
+    if (!USE_MOCK_DATA && supabase) {
+      const results = await Promise.all(
+        updates.map((u) =>
+          supabase!.from("influencer_profiles").update({ league_rank: u.rank }).eq("id", u.id),
+        ),
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw new Error(failed.error.message);
+      return;
+    }
+    for (const u of updates) {
+      const inf = mockDB.influencer_profiles.find((i) => i.id === u.id);
+      if (inf) inf.league_rank = u.rank;
+    }
+    save();
+  },
   async setVisible(influencerId: string, visible: boolean) {
     if (!USE_MOCK_DATA && supabase) {
       const { error } = await supabase
