@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, GitCompare, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,13 @@ import { EmptyState } from "@/components/common";
 import { InfluencerRow } from "./InfluencerRow";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCompare } from "@/hooks/useCompare";
+import { normalizeSearch } from "@/lib/utils";
 import type { Category, InfluencerFull, Platform } from "@/types";
 
 const PAGE_SIZE = 10;
+// Accounts below this follower count are kept out of the top of the
+// "By Engagement" sort — a 100% rate on 30 followers is noise, not a signal.
+const ENGAGEMENT_MIN_FOLLOWERS = 10_000;
 const CATEGORIES: Category[] = [
   "food",
   "tech",
@@ -46,6 +50,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 const countryName = (c: string) => COUNTRY_NAMES[c] ?? c;
 
 type Sort = "by_rank" | "by_followers" | "by_engagement" | "by_price";
+const SORTS: Sort[] = ["by_rank", "by_followers", "by_engagement", "by_price"];
 
 function minPrice(inf: InfluencerFull): number {
   if (!inf.prices.length) return Infinity;
@@ -63,14 +68,35 @@ export function LeagueView({
 }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<Sort>("by_rank");
-  const [platform, setPlatform] = useState<string>("all");
-  const [category, setCategory] = useState<string>("all");
-  const [city, setCity] = useState<string>("all");
-  const [country, setCountry] = useState<string>("all");
-  const [page, setPage] = useState(0);
+  // Filters/sort/page live in the URL so they survive navigating into a profile
+  // and back (browser back restores the exact list state). (#15)
+  const [params, setParams] = useSearchParams();
+  const search = params.get("q") ?? "";
+  const sort = (SORTS.includes(params.get("sort") as Sort) ? params.get("sort") : "by_rank") as Sort;
+  const platform = params.get("platform") ?? "all";
+  const category = params.get("category") ?? "all";
+  const city = params.get("city") ?? "all";
+  const country = params.get("country") ?? "all";
+  const page = Math.max(0, Number(params.get("page") ?? "0") | 0);
   const { selected, toggle: toggleSelect, clear: clearSelected, isSelected } = useCompare();
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  // Merge a set of param changes; clearing back to defaults drops the key so the
+  // URL stays clean. Any filter/search change resets to page 0.
+  function patch(next: Record<string, string>, resetPage = true) {
+    setParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        for (const [k, v] of Object.entries(next)) {
+          if (!v || v === "all" || (k === "page" && v === "0")) p.delete(k);
+          else p.set(k, v);
+        }
+        if (resetPage && !("page" in next)) p.delete("page");
+        return p;
+      },
+      { replace: true },
+    );
+  }
 
   const cities = useMemo(
     () => Array.from(new Set(influencers.map((i) => i.city).filter(Boolean))) as string[],
@@ -81,9 +107,22 @@ export function LeagueView({
     [influencers],
   );
 
+  // How many bloggers are on each platform — powers the dropdown counts and lets
+  // us flag platforms with no data as "coming soon" instead of a dead filter. (#8)
+  const platformCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of PLATFORMS) counts[p] = 0;
+    for (const inf of influencers)
+      for (const p of new Set(inf.platforms.map((x) => x.platform)))
+        if (p in counts) counts[p] += 1;
+    return counts;
+  }, [influencers]);
+
   const filtered = useMemo(() => {
+    const q = normalizeSearch(search);
     let list = influencers.filter((i) => {
-      if (search && !i.display_name.toLowerCase().includes(search.toLowerCase())) return false;
+      // Script-agnostic match: "Азода" finds "Azoda" and vice-versa. (#5)
+      if (q && !normalizeSearch(i.display_name).includes(q)) return false;
       if (platform !== "all" && !i.platforms.some((p) => p.platform === platform)) return false;
       if (category !== "all" && i.category !== category) return false;
       if (city !== "all" && i.city !== city) return false;
@@ -94,9 +133,16 @@ export function LeagueView({
       switch (sort) {
         case "by_followers":
           return b.total_followers - a.total_followers;
-        case "by_engagement":
+        case "by_engagement": {
+          // Eligible (≥ floor) accounts always rank above sub-floor ones, so a
+          // 6-follower / 100% account can't sit at the top. (#6)
+          const aOk = a.total_followers >= ENGAGEMENT_MIN_FOLLOWERS ? 0 : 1;
+          const bOk = b.total_followers >= ENGAGEMENT_MIN_FOLLOWERS ? 0 : 1;
+          if (aOk !== bOk) return aOk - bOk;
           return (b.engagement_rate ?? 0) - (a.engagement_rate ?? 0);
+        }
         case "by_price":
+          // Cheapest public price first; profiles without public pricing last. (#7)
           return minPrice(a) - minPrice(b);
         default:
           return (a.league_rank ?? 999) - (b.league_rank ?? 999);
@@ -106,7 +152,21 @@ export function LeagueView({
   }, [influencers, search, platform, category, city, country, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const current = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const safePage = Math.min(page, pageCount - 1);
+  const current = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+
+  // On page change, bring the top of the table into view so the user starts at
+  // the beginning of the new page rather than stranded at the bottom. (#3)
+  const didMount = useRef(false);
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    tableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [safePage]);
+
+  const sortHint = t(`league.sortHint.${sort}`);
 
   return (
     <div>
@@ -115,16 +175,13 @@ export function LeagueView({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => patch({ q: e.target.value })}
             placeholder={t("league.search")}
             className="pl-9 dark:bg-input dark:border-border dark:text-foreground dark:placeholder:text-muted-foreground"
           />
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-5">
-          <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
+          <Select value={sort} onValueChange={(v) => patch({ sort: v }, false)}>
             <SelectTrigger className="min-w-0 dark:bg-card dark:border-border dark:text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -135,32 +192,24 @@ export function LeagueView({
               <SelectItem value="by_price">{t("league.sortByPrice")}</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={platform}
-            onValueChange={(v) => {
-              setPlatform(v);
-              setPage(0);
-            }}
-          >
+          <Select value={platform} onValueChange={(v) => patch({ platform: v })}>
             <SelectTrigger className="min-w-0 dark:bg-card dark:border-border dark:text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("league.allPlatforms")}</SelectItem>
-              {PLATFORMS.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {t(`platform.${p}`)}
-                </SelectItem>
-              ))}
+              {PLATFORMS.map((p) => {
+                const count = platformCounts[p] ?? 0;
+                return (
+                  <SelectItem key={p} value={p} disabled={count === 0}>
+                    {t(`platform.${p}`)}
+                    {count === 0 ? ` · ${t("league.comingSoon")}` : ` (${count})`}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
-          <Select
-            value={category}
-            onValueChange={(v) => {
-              setCategory(v);
-              setPage(0);
-            }}
-          >
+          <Select value={category} onValueChange={(v) => patch({ category: v })}>
             <SelectTrigger className="min-w-0 dark:bg-card dark:border-border dark:text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -173,13 +222,7 @@ export function LeagueView({
               ))}
             </SelectContent>
           </Select>
-          <Select
-            value={country}
-            onValueChange={(v) => {
-              setCountry(v);
-              setPage(0);
-            }}
-          >
+          <Select value={country} onValueChange={(v) => patch({ country: v })}>
             <SelectTrigger className="min-w-0 dark:bg-card dark:border-border dark:text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -192,13 +235,7 @@ export function LeagueView({
               ))}
             </SelectContent>
           </Select>
-          <Select
-            value={city}
-            onValueChange={(v) => {
-              setCity(v);
-              setPage(0);
-            }}
-          >
+          <Select value={city} onValueChange={(v) => patch({ city: v })}>
             <SelectTrigger className="min-w-0 dark:bg-card dark:border-border dark:text-foreground">
               <SelectValue />
             </SelectTrigger>
@@ -213,6 +250,10 @@ export function LeagueView({
           </Select>
         </div>
       </div>
+
+      {/* Explains the active ordering so "By Price"/"By Engagement" results
+          aren't perceived as random. (#7) */}
+      {sortHint && <p className="mb-3 text-xs text-muted-foreground">{sortHint}</p>}
 
       {enableCompare && selected.length > 0 && (
         <div className="sticky top-16 z-20 mb-4 flex items-center justify-between gap-3 rounded-lg border bg-primary/5 px-4 py-3 shadow-sm backdrop-blur">
@@ -231,7 +272,7 @@ export function LeagueView({
         </div>
       )}
 
-      <div className="rounded-xl border bg-card">
+      <div ref={tableRef} className="scroll-mt-20 rounded-xl border bg-card">
         {current.length === 0 ? (
           <EmptyState icon={Users} title={t("league.noResults")} />
         ) : (
@@ -253,19 +294,19 @@ export function LeagueView({
           <Button
             variant="outline"
             size="icon"
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
+            disabled={safePage === 0}
+            onClick={() => patch({ page: String(safePage - 1) }, false)}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm text-muted-foreground">
-            {page + 1} / {pageCount}
+            {safePage + 1} / {pageCount}
           </span>
           <Button
             variant="outline"
             size="icon"
-            disabled={page >= pageCount - 1}
-            onClick={() => setPage((p) => p + 1)}
+            disabled={safePage >= pageCount - 1}
+            onClick={() => patch({ page: String(safePage + 1) }, false)}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
