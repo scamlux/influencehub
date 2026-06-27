@@ -1,6 +1,6 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { ArrowLeft, BadgeCheck, Heart, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { InfluencerAvatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export function ProfileView({
 }) {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [history, setHistory] = useState<AnalyticsHistory[]>([]);
   const [isFav, setIsFav] = useState(false);
 
@@ -51,10 +52,18 @@ export function ProfileView({
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" size="sm" className="-ml-2">
-        <Link to={backTo}>
-          <ArrowLeft className="h-4 w-4" /> {t("common.back")}
-        </Link>
+      {/* Prefer history-back so the league's filters/page/scroll are restored;
+          fall back to the section root when opened via a direct link. (#15) */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="-ml-2"
+        onClick={() => {
+          if (window.history.state?.idx > 0) navigate(-1);
+          else navigate(backTo);
+        }}
+      >
+        <ArrowLeft className="h-4 w-4" /> {t("common.back")}
       </Button>
 
       {/* Header */}
@@ -113,12 +122,26 @@ export function ProfileView({
               ))}
             </div>
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-success-foreground">
-                {formatEr(influencer.engagement_rate)}
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold">
+                  {formatNumber(influencer.total_followers)}
+                </div>
+                <div className="text-xs text-muted-foreground">{t("league.followers")}</div>
               </div>
-              <div className="text-xs text-muted-foreground">{t("league.engagement")}</div>
+              <div className="text-center">
+                <div
+                  className={cn(
+                    "text-3xl font-bold text-success-foreground",
+                    influencer.engagement_rate == null && "cursor-help",
+                  )}
+                  title={influencer.engagement_rate == null ? t("league.erTooltip") : undefined}
+                >
+                  {formatEr(influencer.engagement_rate)}
+                </div>
+                <div className="text-xs text-muted-foreground">{t("league.engagement")}</div>
+              </div>
             </div>
             {enableFavorite && (
               <Button

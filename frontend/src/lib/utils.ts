@@ -5,6 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Cyrillic → Latin map so search matches regardless of script
+// ("Азода" ↔ "Azoda", "Юсупахмет" ↔ "Yusupakhmet"). Covers Russian plus the
+// extra Uzbek/Kazakh/Kyrgyz letters that appear in our blogger names.
+const TRANSLIT: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z",
+  и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+  с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "sch",
+  ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+  ғ: "g", қ: "q", ҳ: "h", ў: "o", ҷ: "j", ҙ: "z", ң: "ng", ү: "u", ұ: "u",
+  һ: "h", ә: "a", ө: "o", і: "i",
+};
+
+// Normalize a name/query for script-agnostic, accent-insensitive comparison.
+export function normalizeSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip combining diacritics (é → e)
+    .replace(/[а-яёғқҳўҷҙңүұһәөі]/g, (ch) => TRANSLIT[ch] ?? ch)
+    .replace(/[^a-z0-9]/g, ""); // drop spaces/punctuation so "azoda y" ≈ "azoday"
+}
+
 export function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(n % 1_000 === 0 ? 0 : 1)}K`;

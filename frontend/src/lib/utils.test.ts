@@ -1,5 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { formatNumber, formatUSD, initials, timeAgo, formatDate } from "./utils";
+import { formatNumber, formatUSD, initials, timeAgo, formatDate, normalizeSearch } from "./utils";
+
+describe("normalizeSearch", () => {
+  it("matches across Cyrillic and Latin scripts", () => {
+    // "Азода" and "Azoda" should normalize to the same token (#5)
+    expect(normalizeSearch("Азода")).toBe(normalizeSearch("Azoda"));
+    expect(normalizeSearch("Юсупахмет")).toBe("yusupakhmet");
+  });
+
+  it("is case- and punctuation-insensitive", () => {
+    expect(normalizeSearch("Xo‘jayev")).toBe("xojayev");
+    expect(normalizeSearch("Family Travel UZ").includes("familytraveluz")).toBe(true);
+  });
+
+  it("supports partial substring lookups", () => {
+    expect(normalizeSearch("Khabib Nurmagomedov").includes(normalizeSearch("хабиб"))).toBe(true);
+  });
+});
 
 describe("formatNumber", () => {
   it("leaves values under 1,000 untouched", () => {

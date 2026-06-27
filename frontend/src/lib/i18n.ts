@@ -91,6 +91,13 @@ const en: Dict = {
   "league.sortByPrice": "By Price",
   "league.featured": "Featured",
   "league.compare": "Compare",
+  "league.comingSoon": "Coming soon",
+  "league.erTooltip": "Engagement data not collected yet",
+  "league.sortHint.by_rank": "Ranked by overall league position.",
+  "league.sortHint.by_followers": "Most followers first.",
+  "league.sortHint.by_engagement":
+    "Highest engagement first. Accounts under 10K followers are shown lower to filter out inflated rates.",
+  "league.sortHint.by_price": "Lowest ad price first. Profiles without public pricing are shown last.",
 
   // profile
   "profile.contacts": "Contact Information",
@@ -486,6 +493,14 @@ const uz: Dict = {
   "league.sortByPrice": "Narx bo‘yicha",
   "league.featured": "Tavsiya",
   "league.compare": "Solishtirish",
+  "league.comingSoon": "Tez kunda",
+  "league.erTooltip": "Faollik ma'lumotlari hali yig'ilmagan",
+  "league.sortHint.by_rank": "Umumiy liga o'rni bo'yicha saralangan.",
+  "league.sortHint.by_followers": "Avval eng ko'p obunachilar.",
+  "league.sortHint.by_engagement":
+    "Avval eng yuqori faollik. 10K dan kam obunachili akkauntlar pastroqda ko'rsatiladi.",
+  "league.sortHint.by_price":
+    "Avval eng arzon narx. Ommaviy narxsiz profillar oxirida ko'rsatiladi.",
 
   "profile.contacts": "Aloqa ma'lumotlari",
   "profile.prices": "Reklama narxlari",

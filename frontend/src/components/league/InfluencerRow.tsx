@@ -8,7 +8,9 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { formatNumber, formatEr, timeAgo, cn } from "@/lib/utils";
 import type { InfluencerFull } from "@/types";
 
-const medalColor = ["text-yellow-500", "text-slate-400", "text-amber-700"];
+// Distinct gold / silver / bronze so #1–#3 are visually separable. (#17)
+const medalColor = ["text-yellow-400", "text-zinc-400", "text-amber-600"];
+const medalLabel = ["Gold — #1", "Silver — #2", "Bronze — #3"];
 
 export function InfluencerRow({
   influencer,
@@ -25,6 +27,8 @@ export function InfluencerRow({
 }) {
   const { t } = useLanguage();
   const rank = influencer.league_rank ?? 0;
+  const erUnknown = influencer.engagement_rate == null;
+  const erTitle = erUnknown ? t("league.erTooltip") : undefined;
   const rankBorder =
     rank === 1
       ? "border-l-4 border-l-yellow-400"
@@ -73,8 +77,20 @@ export function InfluencerRow({
           />
         )}
         <div className="flex w-8 shrink-0 items-center justify-center">
-          {rank <= 3 ? (
-            <Medal className={cn("h-6 w-6", medalColor[rank - 1])} />
+          {rank >= 1 && rank <= 3 ? (
+            <span
+              className="flex flex-col items-center leading-none"
+              title={medalLabel[rank - 1]}
+            >
+              <Medal
+                className={cn("h-6 w-6", medalColor[rank - 1])}
+                fill="currentColor"
+                fillOpacity={0.18}
+              />
+              <span className={cn("mt-0.5 text-[10px] font-bold", medalColor[rank - 1])}>
+                {rank}
+              </span>
+            </span>
           ) : (
             <span className="text-sm font-bold text-muted-foreground">{rank}</span>
           )}
@@ -121,7 +137,10 @@ export function InfluencerRow({
             <span className="text-xs text-muted-foreground">{t("league.followers")}</span>
           </div>
           <div className="flex flex-col items-end">
-            <span className="font-bold text-success-foreground">
+            <span
+              className={cn("font-bold text-success-foreground", erUnknown && "cursor-help")}
+              title={erTitle}
+            >
               {formatEr(influencer.engagement_rate)}
             </span>
             <span className="text-xs text-muted-foreground">{t("league.engagement")}</span>
@@ -138,7 +157,10 @@ export function InfluencerRow({
       </div>
 
       <div className="hidden w-20 flex-col text-right sm:flex">
-        <span className="font-semibold text-success-foreground">
+        <span
+          className={cn("font-semibold text-success-foreground", erUnknown && "cursor-help")}
+          title={erTitle}
+        >
           {formatEr(influencer.engagement_rate)}
         </span>
         <span className="text-xs text-muted-foreground">{t("league.engagement")}</span>

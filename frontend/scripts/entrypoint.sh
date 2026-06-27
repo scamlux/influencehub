@@ -9,7 +9,7 @@ cd /app
 # file the cron command sources.
 write_env() {
   printenv \
-    | grep -E '^(SUPABASE_|VITE_SUPABASE|YOUTUBE_|APIFY_|REGIONS|YT_MAX|TG_CHANNELS|IG_USERS|TT_USERS)=' \
+    | grep -E '^(SUPABASE_|VITE_SUPABASE|YOUTUBE_|APIFY_|SLACK_WEBHOOK_URL|REGIONS|YT_MAX|TG_CHANNELS|IG_USERS|TT_USERS)=' \
     | sed 's/=\(.*\)$/="\1"/' > /app/cron.env || true
 }
 
