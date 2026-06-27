@@ -49,6 +49,26 @@ SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... YOUTUBE_DATA_API_KEY=... \
 
 (Resolves `@supabase/supabase-js` from the parent `frontend/node_modules`.)
 
+## Healthcheck & alerts
+
+After every refresh, `run-all.sh` calls `healthcheck.mjs`, which:
+
+- inserts a row into `public.discovery_runs` (migration `016_discovery_runs.sql`)
+  recording the overall status (`ok` / `partial` / `failed`), per-job results,
+  duration, and timestamps — a heartbeat so you can confirm the cron is alive;
+- posts to **`SLACK_WEBHOOK_URL`** (if set) whenever any job fails.
+
+Apply the migration once (Supabase SQL editor or `supabase db push`), then set
+`SLACK_WEBHOOK_URL` in `.env`. Leave it blank to disable Slack alerts (the DB
+heartbeat still records). The healthcheck never aborts the run.
+
+Quick "is it still running?" check:
+
+```sql
+select status, jobs, failures, finished_at
+from discovery_runs order by finished_at desc limit 5;
+```
+
 ## Notes
 
 - The **service-role key** grants full DB access — store it only in `.env`
