@@ -17,6 +17,8 @@ dist-ssr
 
 # claude code local settings
 .claude/settings.local.json
+# local MCP server config (contains personal API keys — keep out of git)
+.mcp.json
 
 # logs
 npm-debug.log*
