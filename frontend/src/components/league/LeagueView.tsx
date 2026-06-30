@@ -276,10 +276,11 @@ export function LeagueView({
         {current.length === 0 ? (
           <EmptyState icon={Users} title={t("league.noResults")} />
         ) : (
-          current.map((inf) => (
+          current.map((inf, i) => (
             <InfluencerRow
               key={inf.id}
               influencer={inf}
+              position={safePage * PAGE_SIZE + i + 1}
               profileLink={`${profileLinkBase}/${inf.id}`}
               selectable={enableCompare}
               selected={isSelected(inf.id)}

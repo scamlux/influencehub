@@ -14,19 +14,23 @@ const medalLabel = ["Gold — #1", "Silver — #2", "Bronze — #3"];
 
 export function InfluencerRow({
   influencer,
+  position,
   profileLink,
   selectable,
   selected,
   onToggleSelect,
 }: {
   influencer: InfluencerFull;
+  // 1-based position in the current filtered/sorted/paginated list — the number
+  // and medals reflect the live view, not the static league_rank. (#)
+  position: number;
   profileLink: string;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
 }) {
   const { t } = useLanguage();
-  const rank = influencer.league_rank ?? 0;
+  const rank = position;
   const erUnknown = influencer.engagement_rate == null;
   const erTitle = erUnknown ? t("league.erTooltip") : undefined;
   const rankBorder =
