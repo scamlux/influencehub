@@ -707,7 +707,7 @@ export const subscriptions = {
   async checkout(
     userId: string,
     plan: PlanType,
-    provider: "stripe" | "payme" = "stripe",
+    provider: "stripe" | "payme" | "click" = "stripe",
   ): Promise<Subscription | { redirected: true } | { activated: true }> {
     if (!USE_MOCK_DATA && supabase) {
       const origin = typeof window !== "undefined" ? window.location.origin : "";

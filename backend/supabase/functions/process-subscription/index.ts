@@ -121,6 +121,40 @@ Deno.serve(async (req) => {
       // merchant not configured → fall through to direct activation below
     }
 
+    // ── Click checkout (Uzbekistan) ─────────────────────────────────────────
+    // Same pending-order pattern as Payme; click-webhook confirms via Prepare/
+    // Complete. Requires CLICK_SERVICE_ID + CLICK_MERCHANT_ID (+ CLICK_SECRET_KEY
+    // on the webhook); otherwise falls through to direct activation.
+    if (provider === "click") {
+      const serviceId = Deno.env.get("CLICK_SERVICE_ID");
+      const merchantId = Deno.env.get("CLICK_MERCHANT_ID");
+      if (serviceId && merchantId) {
+        const amountUzs = PLANS[plan].uzs;
+        const { data: pay, error: payErr } = await admin
+          .from("payments")
+          .insert({
+            user_id: user.id,
+            plan_type: plan,
+            amount: amountUzs,
+            currency: "UZS",
+            provider: "click",
+            status: "pending",
+          })
+          .select("id")
+          .single();
+        if (payErr) return json({ error: payErr.message }, 500);
+
+        const url = new URL("https://my.click.uz/services/pay");
+        url.searchParams.set("service_id", serviceId);
+        url.searchParams.set("merchant_id", merchantId);
+        url.searchParams.set("amount", String(amountUzs));
+        url.searchParams.set("transaction_param", pay.id); // → merchant_trans_id
+        if (success_url) url.searchParams.set("return_url", success_url);
+        return json({ checkout_url: url.toString(), order_id: pay.id });
+      }
+      // not configured → fall through to direct activation below
+    }
+
     // ── Mock / no-provider path: activate immediately ───────────────────────
     const expires_at = expiryFor(plan);
     const { error } = await admin.from("subscriptions").insert({
