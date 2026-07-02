@@ -4,6 +4,8 @@ export interface PlanDef {
   plan: PlanType;
   name: string;
   price: string;
+  /** Uzbek sum price for the Payme flow. Keep in sync with process-subscription PLANS. */
+  priceUzs: string;
   cadence: string;
   audience: UserRole;
   tagline: string;
@@ -16,6 +18,7 @@ export const PLANS: PlanDef[] = [
     plan: "brand_pro",
     name: "Brand Pro",
     price: "$29",
+    priceUzs: "350 000 so‘m",
     cadence: "/month",
     audience: "brand",
     tagline: "Full marketplace access for brands",
@@ -32,6 +35,7 @@ export const PLANS: PlanDef[] = [
     plan: "influencer_sync",
     name: "Influencer Sync",
     price: "$5",
+    priceUzs: "60 000 so‘m",
     cadence: "/month",
     audience: "influencer",
     tagline: "Keep your stats fresh & rank higher",
@@ -46,6 +50,7 @@ export const PLANS: PlanDef[] = [
     plan: "influencer_feature",
     name: "Featured",
     price: "$10",
+    priceUzs: "120 000 so‘m",
     cadence: "/day",
     audience: "influencer",
     tagline: "Get featured on the homepage",
