@@ -2,12 +2,18 @@ import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { BidStatus, CampaignStatus, DealStatus } from "@/types";
 
 const map: Record<string, { variant: BadgeProps["variant"]; label: string; className?: string }> = {
-  // deal
+  // deal — marketplace flow
   active: { variant: "default", label: "Active" },
   content_submitted: { variant: "secondary", label: "Content Submitted" },
   approved: { variant: "success", label: "Approved" },
   completed: { variant: "success", label: "Completed" },
   cancelled: { variant: "destructive", label: "Cancelled" },
+  // deal — escrow flow (T-13)
+  funded: { variant: "default", label: "Funded" },
+  in_progress: { variant: "secondary", label: "In Progress" },
+  delivered: { variant: "secondary", label: "Delivered" },
+  released: { variant: "success", label: "Released" },
+  disputed: { variant: "destructive", label: "Disputed" },
   // bid
   pending: { variant: "secondary", label: "Pending" },
   accepted: { variant: "success", label: "Accepted" },
