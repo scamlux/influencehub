@@ -28,7 +28,19 @@ export type CampaignStatus = "draft" | "open" | "active" | "completed" | "cancel
 
 export type BidStatus = "pending" | "accepted" | "rejected";
 
-export type DealStatus = "active" | "content_submitted" | "approved" | "completed" | "cancelled";
+export type DealStatus =
+  // marketplace flow
+  | "active"
+  | "content_submitted"
+  | "approved"
+  | "completed"
+  | "cancelled"
+  // escrow flow (T-13)
+  | "funded"
+  | "in_progress"
+  | "delivered"
+  | "released"
+  | "disputed";
 
 export type ScrapingStatus = "pending" | "processing" | "completed" | "failed";
 

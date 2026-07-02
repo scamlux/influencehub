@@ -9,7 +9,11 @@ import { LanguageProvider } from "./hooks/useLanguage";
 import { CompareProvider } from "./hooks/useCompare";
 import { ToastProvider } from "./components/ui/toast";
 import { USE_MOCK_DATA } from "./lib/supabase";
+import { initMonitoring } from "./lib/monitoring";
 import "./index.css";
+
+// Start error monitoring as early as possible (no-op unless VITE_SENTRY_DSN is set).
+void initMonitoring();
 
 // When connected to a real Supabase backend, purge stale keys left by the
 // in-memory mock layer. A leftover `influencehub_session` (a mock user id like

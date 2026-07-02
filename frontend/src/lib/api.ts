@@ -9,6 +9,7 @@ import type {
   BrandProfile,
   Campaign,
   Deal,
+  DealStatus,
   Discount,
   InfluencerContact,
   InfluencerFull,
@@ -706,7 +707,7 @@ export const subscriptions = {
   async checkout(
     userId: string,
     plan: PlanType,
-    provider: "stripe" | "payme" = "stripe",
+    provider: "stripe" | "payme" | "click" = "stripe",
   ): Promise<Subscription | { redirected: true } | { activated: true }> {
     if (!USE_MOCK_DATA && supabase) {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -977,6 +978,24 @@ export const bids = {
   },
 };
 
+// Deal state machine (T-13). Marketplace flow and escrow flow share the `status`
+// column; this map is the single source of truth for legal transitions. `funded`
+// bridges the two: an active deal that a brand funds through escrow enters `funded`.
+export const DEAL_TRANSITIONS: Record<DealStatus, DealStatus[]> = {
+  // marketplace flow
+  active: ["content_submitted", "cancelled", "funded"],
+  content_submitted: ["approved", "cancelled"],
+  approved: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+  // escrow flow
+  funded: ["in_progress", "disputed", "cancelled"],
+  in_progress: ["delivered", "disputed"],
+  delivered: ["released", "disputed"],
+  released: [],
+  disputed: ["released", "cancelled"],
+};
+
 export const deals = {
   async forBrand(brandId: string): Promise<Deal[]> {
     if (!USE_MOCK_DATA && supabase) {
@@ -1009,6 +1028,41 @@ export const deals = {
       return data ? mapDeal(data) : null;
     }
     return mockDB.deals.find((d) => d.id === id) ?? null;
+  },
+  // Resolve brand display names (profiles.full_name via brand_profiles.user_id)
+  // for a set of deals. Keeps deal-list pages off the mockDB import so they work
+  // unchanged against a live backend.
+  async brandNames(brandIds: string[]): Promise<Record<string, string>> {
+    const ids = [...new Set(brandIds)].filter(Boolean);
+    if (ids.length === 0) return {};
+    if (!USE_MOCK_DATA && supabase) {
+      const { data: brands, error } = await supabase
+        .from("brand_profiles")
+        .select("id, user_id")
+        .in("id", ids);
+      if (error) throw new Error(error.message);
+      const userByBrand = new Map((brands ?? []).map((b) => [b.id as string, b.user_id as string]));
+      const userIds = [...userByBrand.values()];
+      const { data: profs } = userIds.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", userIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const nameByUser = new Map(
+        (profs ?? []).map((p) => [p.id as string, p.full_name ?? "Brand"]),
+      );
+      const out: Record<string, string> = {};
+      for (const id of ids) {
+        const userId = userByBrand.get(id);
+        out[id] = (userId && nameByUser.get(userId)) || "Brand";
+      }
+      return out;
+    }
+    const out: Record<string, string> = {};
+    for (const id of ids) {
+      const bp = mockDB.brand_profiles.find((b) => b.id === id);
+      const profile = bp ? mockDB.profiles.find((p) => p.id === bp.user_id) : null;
+      out[id] = profile?.full_name ?? "Brand";
+    }
+    return out;
   },
   async submitContent(dealId: string, url: string): Promise<void> {
     if (!USE_MOCK_DATA && supabase) {
@@ -1056,6 +1110,17 @@ export const deals = {
         });
     }
     save();
+  },
+  // Validate an escrow-lifecycle move against DEAL_TRANSITIONS, then apply it via
+  // setStatus — the api layer is the single gatekeeper for the state machine (T-13).
+  // `from` defaults to the deal's current status; throws on an illegal transition.
+  async transition(dealId: string, to: DealStatus, from?: DealStatus): Promise<void> {
+    const current = from ?? (await this.get(dealId))?.status;
+    if (!current) throw new Error("Deal not found");
+    if (!(DEAL_TRANSITIONS[current] ?? []).includes(to)) {
+      throw new Error(`Illegal deal transition: ${current} → ${to}`);
+    }
+    await this.setStatus(dealId, to);
   },
 };
 
@@ -1486,7 +1551,14 @@ export const admin = {
   reset() {
     resetMockDB();
   },
+  // Superadmin (mock-only): randomly reshuffle league ranks. In live mode ranks
+  // are derived by the DB/cron refresh, so this is a no-op and GodMode hides the
+  // control. Returns whether the shuffle actually ran.
+  shuffleRanks(): boolean {
+    if (!USE_MOCK_DATA) return false;
+    const order = mockDB.influencer_profiles.map((_, i) => i + 1).sort(() => Math.random() - 0.5);
+    mockDB.influencer_profiles.forEach((inf, i) => (inf.league_rank = order[i]));
+    save();
+    return true;
+  },
 };
-
-// expose for /admin/god-mode
-export { mockDB };
