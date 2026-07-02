@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common";
 import { admin } from "@/lib/api";
-import { mockDB, persist } from "@/lib/mock-data";
+import { USE_MOCK_DATA } from "@/lib/supabase";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/toast";
 
@@ -23,9 +23,10 @@ export default function GodMode() {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const shuffleRanks = () => {
-    const ranks = mockDB.influencer_profiles.map((_, i) => i + 1).sort(() => Math.random() - 0.5);
-    mockDB.influencer_profiles.forEach((inf, i) => (inf.league_rank = ranks[i]));
-    persist(mockDB);
+    if (!admin.shuffleRanks()) {
+      toast({ title: "Disabled on the live backend", variant: "error" });
+      return;
+    }
     toast({ title: "League ranks shuffled", variant: "success" });
   };
 
@@ -44,7 +45,9 @@ export default function GodMode() {
         <CardContent className="flex items-center gap-3 p-4">
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <p className="text-sm dark:text-muted-foreground">
-            These operations bypass normal safeguards. Use with care.
+            {USE_MOCK_DATA
+              ? "These operations bypass normal safeguards and only affect the in-memory mock database. Use with care."
+              : "Running against the live backend — these mock-only operations are disabled. Ranks and data are managed by the database and cron jobs."}
           </p>
         </CardContent>
       </Card>
@@ -58,7 +61,7 @@ export default function GodMode() {
             <CardDescription>Randomly reshuffle league ranks for all bloggers.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={shuffleRanks}>
+            <Button onClick={shuffleRanks} disabled={!USE_MOCK_DATA}>
               <Zap className="h-4 w-4" /> Shuffle Ranks
             </Button>
           </CardContent>
@@ -72,7 +75,11 @@ export default function GodMode() {
             <CardDescription>Restore the entire mock database to its seeded state.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={busy}>
+            <Button
+              variant="destructive"
+              onClick={() => setConfirmOpen(true)}
+              disabled={busy || !USE_MOCK_DATA}
+            >
               <RotateCcw className="h-4 w-4" /> Reset Data
             </Button>
           </CardContent>
