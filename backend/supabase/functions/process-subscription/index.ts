@@ -14,10 +14,12 @@ import { adminClient, getUser } from "../_shared/client.ts";
 
 type PlanType = "brand_pro" | "influencer_sync" | "influencer_feature";
 
-const PLANS: Record<PlanType, { amount: number; cadence: "month" | "day" }> = {
-  brand_pro: { amount: 29, cadence: "month" },
-  influencer_sync: { amount: 5, cadence: "month" },
-  influencer_feature: { amount: 10, cadence: "day" },
+// `amount` = USD (Stripe), `uzs` = Uzbek sum (Payme). Keep the two in sync with
+// frontend/src/lib/plans.ts. UZS figures are round retail prices, not a live FX rate.
+const PLANS: Record<PlanType, { amount: number; uzs: number; cadence: "month" | "day" }> = {
+  brand_pro: { amount: 29, uzs: 350_000, cadence: "month" },
+  influencer_sync: { amount: 5, uzs: 60_000, cadence: "month" },
+  influencer_feature: { amount: 10, uzs: 120_000, cadence: "day" },
 };
 
 function expiryFor(plan: PlanType): string {
@@ -84,18 +86,39 @@ Deno.serve(async (req) => {
       return json({ checkout_url: session.url, session_id: session.id });
     }
 
-    // ── PayMe stub (Uzbekistan) ─────────────────────────────────────────────
+    // ── PayMe checkout (Uzbekistan) ─────────────────────────────────────────
+    // Create a pending order in payments, then hand Payme a checkout URL keyed by
+    // ac.order_id. The payme-webhook function validates against that order and only
+    // grants the plan on PerformTransaction. Requires PAYME_MERCHANT_ID (+ PAYME_KEY
+    // on the webhook); without it we fall through to direct activation below.
     if (provider === "payme") {
       const merchant = Deno.env.get("PAYME_MERCHANT_ID");
-      if (!merchant) {
-        // fall through to direct activation below when not configured
-      } else {
-        const amountTiyin = PLANS[plan].amount * 100 * 12650; // ~USD→UZS demo rate
-        const payload = btoa(
-          `m=${merchant};ac.user_id=${user.id};ac.plan=${plan};a=${amountTiyin}`,
-        );
-        return json({ checkout_url: `https://checkout.paycom.uz/${payload}` });
+      if (merchant) {
+        const amountUzs = PLANS[plan].uzs;
+        const { data: pay, error: payErr } = await admin
+          .from("payments")
+          .insert({
+            user_id: user.id,
+            plan_type: plan,
+            amount: amountUzs,
+            currency: "UZS",
+            provider: "payme",
+            status: "pending",
+          })
+          .select("id")
+          .single();
+        if (payErr) return json({ error: payErr.message }, 500);
+
+        const amountTiyin = Math.round(amountUzs * 100);
+        const parts = [`m=${merchant}`, `ac.order_id=${pay.id}`, `a=${amountTiyin}`];
+        if (success_url) parts.push(`c=${success_url}`);
+        const payload = btoa(parts.join(";"));
+        return json({
+          checkout_url: `https://checkout.paycom.uz/${payload}`,
+          order_id: pay.id,
+        });
       }
+      // merchant not configured → fall through to direct activation below
     }
 
     // ── Mock / no-provider path: activate immediately ───────────────────────
