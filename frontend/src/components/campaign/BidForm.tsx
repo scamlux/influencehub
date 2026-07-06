@@ -53,14 +53,25 @@ export function BidForm({
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
-      await bids.create({
+      const bid = await bids.create({
         campaign_id: campaign.id,
         influencer_id: influencerId,
         proposed_price: values.proposed_price,
         proposal: values.proposal,
         delivery_days: values.delivery_days,
       });
-      toast({ title: t("common.success"), variant: "success" });
+      toast({
+        title: t("campaigns.bidSubmitted"),
+        variant: "success",
+        // Reversible: let the influencer pull the bid straight back.
+        action: {
+          label: t("common.undo"),
+          onClick: async () => {
+            await bids.withdraw(bid.id);
+            onSubmitted?.();
+          },
+        },
+      });
       reset();
       onOpenChange(false);
       onSubmitted?.();
@@ -81,22 +92,22 @@ export function BidForm({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>{t("campaigns.proposedPrice")} ($)</Label>
-            <Input type="number" step="0.01" {...register("proposed_price")} />
+            <Label htmlFor="proposed_price">{t("campaigns.proposedPrice")} ($)</Label>
+            <Input id="proposed_price" type="number" step="0.01" {...register("proposed_price")} />
             {errors.proposed_price && (
               <p className="text-xs text-destructive">{errors.proposed_price.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>{t("campaigns.proposal")}</Label>
-            <Textarea rows={4} {...register("proposal")} />
+            <Label htmlFor="proposal">{t("campaigns.proposal")}</Label>
+            <Textarea id="proposal" rows={4} {...register("proposal")} />
             {errors.proposal && (
               <p className="text-xs text-destructive">{errors.proposal.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
-            <Label>{t("campaigns.deliveryDays")}</Label>
-            <Input type="number" {...register("delivery_days")} />
+            <Label htmlFor="delivery_days">{t("campaigns.deliveryDays")}</Label>
+            <Input id="delivery_days" type="number" {...register("delivery_days")} />
             {errors.delivery_days && (
               <p className="text-xs text-destructive">{errors.delivery_days.message}</p>
             )}

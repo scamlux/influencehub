@@ -2,11 +2,10 @@ import { useEffect, useState, useCallback } from "react";
 import { Handshake } from "lucide-react";
 import { DealRow } from "@/components/campaign/DealRow";
 import { PageHeader, PageLoader, EmptyState } from "@/components/common";
-import { deals as dealApi, influencers } from "@/lib/api";
+import { deals as dealApi, influencers, brands } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/toast";
-import { mockDB } from "@/lib/mock-data";
 import type { Deal } from "@/types";
 
 export default function InfluencerDeals() {
@@ -23,13 +22,7 @@ export default function InfluencerDeals() {
     if (!inf) return setLoading(false);
     const list = await dealApi.forInfluencer(inf.id);
     setData(list);
-    const map: Record<string, string> = {};
-    list.forEach((d) => {
-      const bp = mockDB.brand_profiles.find((b) => b.id === d.brand_id);
-      const profile = bp ? mockDB.profiles.find((p) => p.id === bp.user_id) : null;
-      map[d.brand_id] = profile?.full_name ?? "Brand";
-    });
-    setNames(map);
+    setNames(await brands.names(list.map((d) => d.brand_id)));
     setLoading(false);
   }, [user]);
 

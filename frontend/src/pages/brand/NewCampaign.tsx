@@ -89,25 +89,25 @@ export default function NewCampaign() {
         <CardContent className="p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t("campaigns.nameLabel")}</Label>
-              <Input {...register("title")} />
+              <Label htmlFor="title">{t("campaigns.nameLabel")}</Label>
+              <Input id="title" {...register("title")} />
               {errors.title && <p className="text-xs text-destructive">{errors.title.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label>{t("influencer.description")}</Label>
-              <Textarea rows={3} {...register("description")} />
+              <Label htmlFor="description">{t("influencer.description")}</Label>
+              <Textarea id="description" rows={3} {...register("description")} />
               {errors.description && (
                 <p className="text-xs text-destructive">{errors.description.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label>{t("campaigns.requirements")}</Label>
-              <Textarea rows={2} {...register("requirements")} />
+              <Label htmlFor="requirements">{t("campaigns.requirements")}</Label>
+              <Textarea id="requirements" rows={2} {...register("requirements")} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>{t("campaigns.budget")} ($)</Label>
-                <Input type="number" {...register("budget_usd")} />
+                <Label htmlFor="budget_usd">{t("campaigns.budget")} ($)</Label>
+                <Input id="budget_usd" type="number" {...register("budget_usd")} />
                 {errors.budget_usd && (
                   <p className="text-xs text-destructive">{errors.budget_usd.message}</p>
                 )}

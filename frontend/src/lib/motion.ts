@@ -1,4 +1,4 @@
-import type { Transition, Variants } from "motion/react";
+import { useReducedMotion, type Transition, type Variants } from "motion/react";
 
 /* =============================================================================
    MOTION SYSTEM — single source of truth for animation
@@ -108,3 +108,15 @@ export const hoverScale = {
   whileTap: { scale: 0.95 },
   transition: transition.fast,
 } as const;
+
+/* ---- Reduced-motion-aware helpers ---------------------------------------- */
+
+/**
+ * True when the user asked for reduced motion. Use to gate decorative,
+ * non-essential motion (confetti, count-up, layout shuffles). Framer already
+ * neutralises transform/opacity animations via <MotionConfig reducedMotion>,
+ * but effects we drive by hand (canvas, rAF counters) must check this too.
+ */
+export function usePrefersReducedMotion(): boolean {
+  return useReducedMotion() ?? false;
+}

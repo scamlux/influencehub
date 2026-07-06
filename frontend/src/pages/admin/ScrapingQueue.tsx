@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common";
 import { ScrapingQueueTable } from "@/components/admin/ScrapingQueueTable";
 import { admin, subscribe, influencers } from "@/lib/api";
-import { mockDB } from "@/lib/mock-data";
 import { useLanguage } from "@/hooks/useLanguage";
 import type { ScrapingQueueItem } from "@/types";
 
@@ -28,9 +27,9 @@ export default function AdminScrapingQueue() {
   const nameFor = (id: string) => names[id] ?? "—";
 
   const requeue = () => {
-    const random =
-      mockDB.influencer_profiles[Math.floor(Math.random() * mockDB.influencer_profiles.length)];
-    admin.enqueueScrape(random.id);
+    const ids = Object.keys(names);
+    if (!ids.length) return;
+    admin.enqueueScrape(ids[Math.floor(Math.random() * ids.length)]);
   };
 
   return (

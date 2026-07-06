@@ -11,8 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common";
-import { admin } from "@/lib/api";
-import { mockDB, persist } from "@/lib/mock-data";
+import { admin, influencers } from "@/lib/api";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/toast";
 
@@ -22,11 +21,16 @@ export default function GodMode() {
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const shuffleRanks = () => {
-    const ranks = mockDB.influencer_profiles.map((_, i) => i + 1).sort(() => Math.random() - 0.5);
-    mockDB.influencer_profiles.forEach((inf, i) => (inf.league_rank = ranks[i]));
-    persist(mockDB);
-    toast({ title: "League ranks shuffled", variant: "success" });
+  const shuffleRanks = async () => {
+    setBusy(true);
+    try {
+      const list = await influencers.listAll();
+      const ranks = list.map((_, i) => i + 1).sort(() => Math.random() - 0.5);
+      await admin.reorderInfluencers(list.map((inf, i) => ({ id: inf.id, rank: ranks[i] })));
+      toast({ title: "League ranks shuffled", variant: "success" });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const resetData = () => {
@@ -58,7 +62,7 @@ export default function GodMode() {
             <CardDescription>Randomly reshuffle league ranks for all bloggers.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={shuffleRanks}>
+            <Button onClick={shuffleRanks} disabled={busy}>
               <Zap className="h-4 w-4" /> Shuffle Ranks
             </Button>
           </CardContent>

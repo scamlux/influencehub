@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import { reportError } from "@/lib/sentry";
 
 interface Props {
   children: ReactNode;
@@ -22,9 +23,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Surface in the console for debugging; swap for a real reporter (Sentry…)
-    // when one is wired up.
     console.error("Uncaught error:", error, info.componentStack);
+    reportError(error, { componentStack: info.componentStack });
   }
 
   handleReset = () => {
