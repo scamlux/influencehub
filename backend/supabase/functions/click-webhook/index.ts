@@ -13,6 +13,7 @@ import { encodeHex } from "jsr:@std/encoding@1/hex";
 import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient } from "../_shared/client.ts";
 import { fulfillOrder, parseOrderRef, validateOrder } from "../_shared/fulfill.ts";
+import { clientIp, rateLimit } from "../_shared/rate-limit.ts";
 import {
   ClickError,
   handleClickRequest,
@@ -126,6 +127,9 @@ async function parseParams(req: Request): Promise<ClickParams> {
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
+
+  const rl = rateLimit(`click:${clientIp(req)}`, { limit: 120, windowSec: 60 });
+  if (!rl.allowed) return json({ error: -8, error_note: "Too many requests" }, 200);
 
   const secretKey = Deno.env.get("CLICK_SECRET_KEY") ?? "";
   const serviceId = Deno.env.get("CLICK_SERVICE_ID") ?? "";

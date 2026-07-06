@@ -17,6 +17,7 @@ import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient } from "../_shared/client.ts";
 import { fulfillOrder, revertOrder, validateOrder, type OrderRef } from "../_shared/fulfill.ts";
 import { PLANS_USD, type PlanType } from "../_shared/uz.ts";
+import { clientIp, rateLimit } from "../_shared/rate-limit.ts";
 import {
   handlePaymeRpc,
   isAuthorized,
@@ -146,6 +147,13 @@ function supabaseStore(admin: Admin): PaymeStore {
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
+
+  // Payme retries aggressively; a generous window absorbs legitimate retries
+  // while still capping abuse. Over-limit returns a protocol error (HTTP 200).
+  const rl = rateLimit(`payme:${clientIp(req)}`, { limit: 120, windowSec: 60 });
+  if (!rl.allowed) {
+    return json({ id: null, error: { code: -32400, message: "Too many requests" } }, 200);
+  }
 
   const keys = [
     Deno.env.get("PAYME_MERCHANT_KEY") ?? "",

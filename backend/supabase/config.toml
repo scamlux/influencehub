@@ -62,3 +62,5 @@ verify_jwt = false
 verify_jwt = false
 [functions.fund-deal]
 verify_jwt = true
+[functions.release-deal]
+verify_jwt = true

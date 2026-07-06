@@ -12,10 +12,14 @@
 
 import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient, getUser } from "../_shared/client.ts";
+import { clientIp, rateLimit, tooManyRequests } from "../_shared/rate-limit.ts";
 
 Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
+
+  const rl = rateLimit(`release-deal:${clientIp(req)}`, { limit: 20, windowSec: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfterSec);
 
   try {
     const user = await getUser(req);

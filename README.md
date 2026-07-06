@@ -28,8 +28,10 @@ famic/
 - **Frontend:** React 18, TypeScript, Vite, Tailwind + shadcn/ui, React Router v6,
   React Hook Form + Zod, Recharts, Lucide.
 - **Backend:** Supabase — **PostgreSQL**, Auth, Realtime, Storage, Edge Functions (Deno).
-- **Payments:** Stripe (primary) + PayMe (Uzbekistan).
-- **i18n:** custom in-memory EN/UZ.
+- **Payments:** Stripe (cards) + **Payme Merchant API** & **Click SHOPAPI** (Uzbekistan, in tiyin).
+- **Escrow:** deals funded into escrow, 12% platform fee, released to a payout queue.
+- **i18n:** custom in-memory **EN / UZ / RU**.
+- **Monitoring:** optional Sentry (frontend) + per-instance rate limiting on edge functions.
 
 See [`docs/TECH_STACK.md`](docs/TECH_STACK.md) for the full justification,
 including why **PostgreSQL** was chosen over MongoDB.
@@ -65,20 +67,64 @@ layer in `frontend/src/lib/mock-data.ts` — every page is browsable offline.
    - `008_daily_refresh.sql` — pg_cron settings store + first-pass worker
    - `009_pgcron_apify_refresh.sql` — in-DB daily refresh of followers,
      engagement & avatars (Apify + YouTube via the `http` extension)
+   - `010`–`017` — audit-log triggers, demo/test accounts, avatar storage &
+     caching, league cleanup, discovery heartbeat, display-name latinization
+   - `018_message_notifications.sql` — notify the chat counterpart on new
+     messages (one unread notification per chat)
+   - `019_uz_payment_providers.sql` — `payme_transactions`, `click_transactions`,
+     `payments.provider/provider_ref/deal_id`
+   - `020_escrow.sql` — `deal_payments` (held → released → refunded → paid_out)
+     and `payouts` queue, integer USD cents only, RLS scoped to deal parties
 
 2. Deploy the edge functions:
 
    ```bash
    supabase functions deploy process-subscription stripe-webhook \
      onboard-influencer claim-influencer fetch-social-stats \
-     process-scraping-queue send-magic-link discover-influencers
+     process-scraping-queue send-magic-link discover-influencers \
+     payme-webhook click-webhook fund-deal release-deal
    ```
 
-   `stripe-webhook` must be registered with `verify_jwt = false` (Stripe sends
-   no Supabase JWT) — see the note in `functions/stripe-webhook/index.ts`.
+   Payment webhooks (`stripe-webhook`, `payme-webhook`, `click-webhook`) are
+   registered with `verify_jwt = false` — the gateways send no Supabase JWT and
+   authenticate by provider signature instead (Stripe signature / Basic
+   `Paycom:<key>` / Click md5). `fund-deal` and `release-deal` require a JWT.
 
 3. Copy `frontend/.env.example` → `frontend/.env` and fill in
-   `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`.
+   `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` (optional `VITE_SENTRY_DSN`).
+   Backend secrets go in `backend/.env` (see `backend/.env.example`):
+   `supabase secrets set --env-file backend/.env`.
+
+   | Secret | Function | Purpose |
+   | ------ | -------- | ------- |
+   | `PAYME_MERCHANT_KEY` / `PAYME_MERCHANT_TEST_KEY` | payme-webhook | prod / sandbox Basic-auth keys |
+   | `CLICK_SERVICE_ID` / `CLICK_MERCHANT_ID` / `CLICK_SECRET_KEY` | click-webhook | Click SHOPAPI |
+   | `UZS_PER_USD` | shared | USD→UZS rate for pricing in tiyin (default 12800) |
+   | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | stripe-webhook, fund-deal | card payments |
+
+## Payments & escrow
+
+Subscriptions and deal funding share one order model (`_shared/fulfill.ts`).
+Providers verify their own protocol, then delegate the business effect:
+
+- **Payme** (`payme-webhook`) — full Merchant API JSON-RPC:
+  `CheckPerformTransaction`, `CreateTransaction`, `PerformTransaction`,
+  `CancelTransaction`, `CheckTransaction`; transaction states `1/2/-1/-2`;
+  idempotent perform/cancel. **Sandbox:** set only `PAYME_MERCHANT_TEST_KEY`
+  and point the `test.paycom.uz` cabinet at the function URL.
+- **Click** (`click-webhook`) — SHOPAPI Prepare/Complete with md5 sign check.
+- **Escrow flow:** deal is created `pending` → brand funds via `fund-deal`
+  (money `held`, 12% platform fee snapshotted) → influencer `start`/`deliver`
+  → brand `release` (or admin resolves a dispute) → `payouts` row enqueued →
+  admin marks it paid from the **Payments** panel (`paid_out`). Money is
+  integer USD cents throughout — no floats. The whole flow is demoable in mock
+  mode (funding is simulated locally).
+
+Protocol logic is isolated in each function's `core.ts` and unit-tested:
+
+```bash
+deno test backend/supabase/functions   # Payme (8) + Click (6) + rate-limit (3)
+```
 
 ## Scripts (run from repo root)
 
@@ -102,7 +148,30 @@ npm run format:check && npm run lint && npm run typecheck && npm run test && npm
 ```
 
 Tests live next to the code they cover (`frontend/src/**/*.test.ts`) and run on
-the in-memory mock layer, so they need no backend.
+the in-memory mock layer, so they need no backend. Payment/escrow protocol
+cores are tested with Deno (`deno test backend/supabase/functions`).
+
+**End-to-end (Playwright):** 5 smoke scenarios (brand registration, subscription,
+campaign creation, influencer bid, chat) run against mock mode — no backend
+needed:
+
+```bash
+cd frontend && npm run e2e        # headless; e2e:ui for the inspector
+```
+
+CI runs them in a dedicated job after the unit build.
+
+## Production checklist
+
+- [x] Rate limiting on edge functions (`_shared/rate-limit.ts`, per-instance
+      fixed window) — applied to payment webhooks and fund/release.
+- [x] Payment webhook signature verification + idempotency by transaction id.
+- [x] Sentry-ready error reporting (`VITE_SENTRY_DSN`).
+- [x] E2E smoke suite green in CI.
+- [ ] Enable Supabase **PITR** backups (Point-in-Time Recovery) on the project.
+- [ ] Point a custom domain + set `VITE_*` production env in the host.
+- [ ] Add product analytics (PostHog / Plausible) snippet.
+- [ ] PII retention policy for `influencer_contacts` (scrub on request).
 
 ## Deployment
 
