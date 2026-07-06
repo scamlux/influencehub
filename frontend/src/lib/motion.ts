@@ -1,4 +1,5 @@
-import type { Transition, Variants } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { useReducedMotion, type Transition, type Variants } from "motion/react";
 
 /* =============================================================================
    MOTION SYSTEM — single source of truth for animation
@@ -108,3 +109,53 @@ export const hoverScale = {
   whileTap: { scale: 0.95 },
   transition: transition.fast,
 } as const;
+
+/* ---- Reduced-motion-aware helpers ---------------------------------------- */
+
+/**
+ * True when the user asked for reduced motion. Use to gate decorative,
+ * non-essential motion (confetti, count-up, layout shuffles). Framer already
+ * neutralises transform/opacity animations via <MotionConfig reducedMotion>,
+ * but effects we drive by hand (canvas, rAF counters) must check this too.
+ */
+export function usePrefersReducedMotion(): boolean {
+  return useReducedMotion() ?? false;
+}
+
+/**
+ * Count-up from 0 → `value` over `durationMs`, honoring reduced motion (jumps
+ * straight to the value). Returns the current animated number.
+ */
+export function useCountUp(value: number, durationMs = 900): number {
+  const reduced = usePrefersReducedMotion();
+  const [display, setDisplay] = useState(reduced ? value : 0);
+  const frame = useRef<number>();
+  const from = useRef(0);
+
+  useEffect(() => {
+    if (reduced) {
+      setDisplay(value);
+      return;
+    }
+    const start = performance.now();
+    const startValue = from.current;
+    const delta = value - startValue;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / durationMs);
+      // easeOutExpo for a confident settle.
+      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
+      setDisplay(startValue + delta * eased);
+      if (p < 1) {
+        frame.current = requestAnimationFrame(tick);
+      } else {
+        from.current = value;
+      }
+    };
+    frame.current = requestAnimationFrame(tick);
+    return () => {
+      if (frame.current) cancelAnimationFrame(frame.current);
+    };
+  }, [value, durationMs, reduced]);
+
+  return display;
+}

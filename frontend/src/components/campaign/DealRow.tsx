@@ -54,11 +54,16 @@ export function DealRow({
               </a>
             )}
           </div>
-          <Button asChild variant="outline" size="sm">
-            <Link to={`${chatBase}/${deal.id}`}>
-              <MessageSquare className="h-4 w-4" /> {t("deals.openChat")}
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild size="sm">
+              <Link to={`/${role}/deals/${deal.id}`}>{t("deals.viewDeal")}</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to={`${chatBase}/${deal.id}`}>
+                <MessageSquare className="h-4 w-4" /> {t("deals.openChat")}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Influencer actions */}

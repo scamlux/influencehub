@@ -8,9 +8,11 @@ import type {
   CampaignStatus,
   Category,
   Deal,
+  DealPayment,
   DealStatus,
   Discount,
   Favorite,
+  Payout,
   InfluencerContact,
   InfluencerProfile,
   Message,
@@ -131,6 +133,8 @@ export interface MockDB {
   favorites: Favorite[];
   analytics_history: AnalyticsHistory[];
   payments: Payment[];
+  deal_payments: DealPayment[];
+  payouts: Payout[];
   admin_actions: AdminAction[];
   scraping_queue: ScrapingQueueItem[];
 }
@@ -586,15 +590,17 @@ function build(): MockDB {
     favorites,
     analytics_history,
     payments,
+    deal_payments: [],
+    payouts: [],
     admin_actions,
     scraping_queue,
   };
 }
 
 // Single in-memory instance, persisted to localStorage so edits survive reloads.
-// Bumped to v2 so the improved seed data (varied campaign descriptions,
-// realistic follower-growth curves) replaces any stale cached copy.
-const STORAGE_KEY = "influencehub_mockdb_v2";
+// Bumped to v3 so the escrow tables (deal_payments, payouts) exist on every
+// cached copy instead of being undefined for returning users.
+const STORAGE_KEY = "influencehub_mockdb_v3";
 
 function load(): MockDB {
   if (typeof localStorage !== "undefined") {

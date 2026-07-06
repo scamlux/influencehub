@@ -2,6 +2,8 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { mockDB, persist, resetMockDB } from "./mock-data";
 import { supabase, USE_MOCK_DATA } from "./supabase";
 import { uid } from "./utils";
+import { splitEscrow } from "./plans";
+import { canTransition, nextStatus, type DealAction } from "./deal-status";
 import type {
   AdvertisingPrice,
   AnalyticsHistory,
@@ -10,7 +12,9 @@ import type {
   BrandProfile,
   Campaign,
   Deal,
+  DealPayment,
   Discount,
+  Payout,
   InfluencerContact,
   InfluencerFull,
   InfluencerProfile,
@@ -953,7 +957,7 @@ export const bids = {
           brand_id: brandId,
           influencer_id: bid.influencer_id,
           agreed_price: num(bid.proposed_price),
-          status: "active",
+          status: "pending",
         })
         .select()
         .single();
@@ -976,7 +980,7 @@ export const bids = {
       brand_id: camp.brand_id,
       influencer_id: bid.influencer_id,
       agreed_price: bid.proposed_price,
-      status: "active",
+      status: "pending",
       content_url: null,
       completed_at: null,
       review: null,
@@ -1088,6 +1092,168 @@ export const deals = {
         });
     }
     save();
+  },
+
+  // ─── escrow (T-13 / T-14) ───────────────────────────────────────────────────
+  async paymentFor(dealId: string): Promise<DealPayment | null> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { data, error } = await supabase
+        .from("deal_payments")
+        .select("*")
+        .eq("deal_id", dealId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as DealPayment) ?? null;
+    }
+    return (
+      [...mockDB.deal_payments].reverse().find((p) => p.deal_id === dealId) ?? null
+    );
+  },
+
+  // Brand funds the deal into escrow. Live mode delegates to the fund-deal
+  // edge function (which may return a provider checkout_url); mock mode holds
+  // the money locally so the whole flow is demoable offline.
+  async fund(
+    dealId: string,
+    opts: { provider?: "mock" | "stripe" | "payme" | "click" } = {},
+  ): Promise<{ funded: boolean; checkout_url?: string }> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { data, error } = await supabase.functions.invoke("fund-deal", {
+        body: { deal_id: dealId, provider: opts.provider ?? "stripe" },
+      });
+      if (error) throw new Error(error.message);
+      return { funded: Boolean(data?.funded), checkout_url: data?.checkout_url };
+    }
+    const deal = mockDB.deals.find((d) => d.id === dealId);
+    if (!deal) throw new Error("Deal not found");
+    if (!canTransition(deal.status, "fund", "brand")) {
+      throw new Error(`Cannot fund a deal in status "${deal.status}"`);
+    }
+    const amountCents = Math.round(num(deal.agreed_price) * 100);
+    const { feeCents, payoutCents } = splitEscrow(amountCents);
+    const brand = mockDB.brand_profiles.find((b) => b.id === deal.brand_id);
+    const now = new Date().toISOString();
+    mockDB.deal_payments.push({
+      id: uid(),
+      deal_id: dealId,
+      brand_user_id: brand?.user_id ?? null,
+      amount_cents: amountCents,
+      fee_cents: feeCents,
+      payout_cents: payoutCents,
+      currency: "USD",
+      provider: opts.provider ?? "mock",
+      provider_ref: `mock-${dealId}`,
+      status: "held",
+      held_at: now,
+      released_at: null,
+      created_at: now,
+    });
+    deal.status = "funded";
+    const inf = mockDB.influencer_profiles.find((i) => i.id === deal.influencer_id);
+    if (inf?.user_id)
+      notifications.push(inf.user_id, {
+        type: "deal_update",
+        title: "Deal funded",
+        message: "The brand funded this deal — you can start working.",
+        link: "/influencer/deals",
+      });
+    save();
+    return { funded: true };
+  },
+
+  // Generic non-funding transition (start / deliver / dispute / resolve_*).
+  // Money side-effects (release, refund) are handled here in mock mode and by
+  // the release-deal edge function in live mode.
+  async advance(
+    dealId: string,
+    action: DealAction,
+    role: UserRole,
+    opts: { contentUrl?: string } = {},
+  ): Promise<Deal> {
+    const isReleaseLike = action === "release" || action === "resolve_release";
+    const isRefund = action === "resolve_refund";
+
+    if (!USE_MOCK_DATA && supabase) {
+      if (isReleaseLike || isRefund) {
+        const { error } = await supabase.functions.invoke("release-deal", {
+          body: { deal_id: dealId, resolution: isRefund ? "refunded" : "released" },
+        });
+        if (error) throw new Error(error.message);
+      } else {
+        const target = nextStatus(
+          (await this.get(dealId))?.status ?? "pending",
+          action,
+        );
+        if (!target) throw new Error(`Illegal transition: ${action}`);
+        const patch: Partial<Deal> = { status: target };
+        if (opts.contentUrl) patch.content_url = opts.contentUrl;
+        const { error } = await supabase.from("deals").update(patch).eq("id", dealId);
+        if (error) throw new Error(error.message);
+      }
+      const updated = await this.get(dealId);
+      if (!updated) throw new Error("Deal not found");
+      return updated;
+    }
+
+    const deal = mockDB.deals.find((d) => d.id === dealId);
+    if (!deal) throw new Error("Deal not found");
+    if (!canTransition(deal.status, action, role)) {
+      throw new Error(`Cannot ${action} a deal in status "${deal.status}" as ${role}`);
+    }
+    const target = nextStatus(deal.status, action)!;
+    deal.status = target;
+    if (opts.contentUrl) deal.content_url = opts.contentUrl;
+    if (target === "released" || target === "completed") {
+      deal.completed_at = new Date().toISOString();
+    }
+
+    // Money movement on release: mark escrow released + enqueue a payout.
+    if (isReleaseLike) {
+      const payment = [...mockDB.deal_payments]
+        .reverse()
+        .find((p) => p.deal_id === dealId && p.status === "held");
+      if (payment) {
+        payment.status = "released";
+        payment.released_at = new Date().toISOString();
+        if (!mockDB.payouts.some((p) => p.deal_payment_id === payment.id)) {
+          mockDB.payouts.push({
+            id: uid(),
+            deal_payment_id: payment.id,
+            deal_id: dealId,
+            influencer_id: deal.influencer_id,
+            amount_cents: payment.payout_cents,
+            currency: payment.currency,
+            status: "pending",
+            paid_at: null,
+            paid_by: null,
+            note: null,
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
+    } else if (isRefund) {
+      const payment = [...mockDB.deal_payments]
+        .reverse()
+        .find((p) => p.deal_id === dealId && p.status === "held");
+      if (payment) payment.status = "refunded";
+      deal.status = "cancelled";
+    }
+
+    // Notify the counterpart of the new status.
+    const brand = mockDB.brand_profiles.find((b) => b.id === deal.brand_id);
+    const inf = mockDB.influencer_profiles.find((i) => i.id === deal.influencer_id);
+    const recipient = role === "brand" ? inf?.user_id : brand?.user_id;
+    if (recipient)
+      notifications.push(recipient, {
+        type: "deal_update",
+        title: "Deal updated",
+        message: `Deal status changed to "${deal.status}".`,
+        link: role === "brand" ? "/influencer/deals" : "/brand/deals",
+      });
+    save();
+    return deal;
   },
 };
 
@@ -1483,6 +1649,65 @@ export const admin = {
     return [...mockDB.deals].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
+  },
+  // ─── payouts queue (T-15) ────────────────────────────────────────────────
+  async payouts(): Promise<Payout[]> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { data, error } = await supabase
+        .from("payouts")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Payout[];
+    }
+    return [...mockDB.payouts].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  },
+  async markPayoutPaid(payoutId: string, adminId: string, note?: string): Promise<void> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { error } = await supabase
+        .from("payouts")
+        .update({
+          status: "paid",
+          paid_at: new Date().toISOString(),
+          paid_by: adminId,
+          note: note ?? null,
+        })
+        .eq("id", payoutId)
+        .eq("status", "pending");
+      if (error) throw new Error(error.message);
+      // Reflect the settled payout on its escrow record.
+      const { data: payout } = await supabase
+        .from("payouts")
+        .select("deal_payment_id")
+        .eq("id", payoutId)
+        .maybeSingle();
+      if (payout?.deal_payment_id) {
+        await supabase
+          .from("deal_payments")
+          .update({ status: "paid_out" })
+          .eq("id", payout.deal_payment_id);
+      }
+      return;
+    }
+    const payout = mockDB.payouts.find((p) => p.id === payoutId);
+    if (!payout || payout.status !== "pending") return;
+    payout.status = "paid";
+    payout.paid_at = new Date().toISOString();
+    payout.paid_by = adminId;
+    payout.note = note ?? null;
+    const payment = mockDB.deal_payments.find((p) => p.id === payout.deal_payment_id);
+    if (payment) payment.status = "paid_out";
+    const inf = mockDB.influencer_profiles.find((i) => i.id === payout.influencer_id);
+    if (inf?.user_id)
+      notifications.push(inf.user_id, {
+        type: "payout",
+        title: "You've been paid",
+        message: `Your payout for a completed deal has been sent.`,
+        link: "/influencer/deals",
+      });
+    save();
   },
   async allSubscriptions(): Promise<Subscription[]> {
     if (!USE_MOCK_DATA && supabase) {

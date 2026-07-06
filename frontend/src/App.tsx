@@ -59,6 +59,7 @@ const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const AdminBloggers = lazy(() => import("./pages/admin/Bloggers"));
 const AdminCampaigns = lazy(() => import("./pages/admin/Campaigns"));
 const AdminDeals = lazy(() => import("./pages/admin/Deals"));
+const DealDetail = lazy(() => import("./pages/shared/DealDetail"));
 const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const AdminPayments = lazy(() => import("./pages/admin/Payments"));
 const AdminAuditLog = lazy(() => import("./pages/admin/AuditLog"));
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="campaigns/new" element={<BrandNewCampaign />} />
             <Route path="campaigns/:id" element={<BrandCampaignDetail />} />
             <Route path="deals" element={<BrandDeals />} />
+            <Route path="deals/:dealId" element={<DealDetail />} />
             <Route path="chat/:dealId" element={<BrandChat />} />
             <Route path="compare" element={<BrandCompare />} />
             <Route path="favorites" element={<BrandFavorites />} />
@@ -143,6 +145,7 @@ export default function App() {
             <Route path="discounts" element={<InfDiscounts />} />
             <Route path="bids" element={<InfBids />} />
             <Route path="deals" element={<InfDeals />} />
+            <Route path="deals/:dealId" element={<DealDetail />} />
             <Route path="chat/:dealId" element={<InfChat />} />
             <Route path="campaigns" element={<InfCampaigns />} />
           </Route>
@@ -161,6 +164,7 @@ export default function App() {
             <Route path="bloggers" element={<AdminBloggers />} />
             <Route path="campaigns" element={<AdminCampaigns />} />
             <Route path="deals" element={<AdminDeals />} />
+            <Route path="deals/:dealId" element={<DealDetail />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="payments" element={<AdminPayments />} />

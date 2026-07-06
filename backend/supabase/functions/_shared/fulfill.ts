@@ -18,7 +18,8 @@ export type OrderValidation =
   | { ok: true; expectedTiyin: number }
   | { ok: false; reason: "not_found" | "not_fundable" };
 
-export type ProviderMeta = { provider: string; providerRef: string; amountTiyin: number };
+/** amount/currency describe the row written to public.payments (display money). */
+export type ProviderMeta = { provider: string; providerRef: string; amount: number; currency: string };
 
 /** Parse "deal:<id>" / "sub:<user_id>:<plan>" merchant references (Click). */
 export function parseOrderRef(merchantTransId: string): OrderRef | null {
@@ -55,7 +56,6 @@ export async function validateOrder(admin: Admin, order: OrderRef): Promise<Orde
 
 /** Apply the paid order: activate the subscription or hold escrow money. */
 export async function fulfillOrder(admin: Admin, order: OrderRef, meta: ProviderMeta): Promise<void> {
-  const uzs = Math.round(meta.amountTiyin / 100);
 
   if (order.kind === "deal") {
     const { data: deal, error } = await admin
@@ -95,8 +95,8 @@ export async function fulfillOrder(admin: Admin, order: OrderRef, meta: Provider
 
     await admin.from("payments").insert({
       user_id: brand?.user_id ?? null,
-      amount: uzs,
-      currency: "UZS",
+      amount: meta.amount,
+      currency: meta.currency,
       status: "succeeded",
       provider: meta.provider,
       provider_ref: meta.providerRef,
@@ -115,8 +115,8 @@ export async function fulfillOrder(admin: Admin, order: OrderRef, meta: Provider
   await admin.from("payments").insert({
     user_id: order.userId,
     plan_type: order.plan,
-    amount: uzs,
-    currency: "UZS",
+    amount: meta.amount,
+    currency: meta.currency,
     status: "succeeded",
     provider: meta.provider,
     provider_ref: meta.providerRef,

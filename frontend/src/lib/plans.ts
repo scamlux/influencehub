@@ -1,5 +1,15 @@
 import type { PlanType, UserRole } from "@/types";
 
+// Platform take rate on escrow deals (T-14). Integer percent — deal money is
+// held in USD cents, never floats. Mirrors backend _shared/uz.ts.
+export const PLATFORM_FEE_PCT = 12;
+
+/** Split a gross deal amount (USD cents) into platform fee + influencer payout. */
+export function splitEscrow(amountCents: number): { feeCents: number; payoutCents: number } {
+  const feeCents = Math.round((amountCents * PLATFORM_FEE_PCT) / 100);
+  return { feeCents, payoutCents: amountCents - feeCents };
+}
+
 export interface PlanDef {
   plan: PlanType;
   name: string;

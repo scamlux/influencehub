@@ -106,7 +106,8 @@ function supabaseStore(admin: Admin): ClickStore {
       await fulfillOrder(admin, order, {
         provider: "click",
         providerRef: tx.click_trans_id,
-        amountTiyin: tx.amount,
+        amount: Math.round(tx.amount / 100),
+        currency: "UZS",
       });
     },
   };

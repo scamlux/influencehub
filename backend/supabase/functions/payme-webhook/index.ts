@@ -125,7 +125,8 @@ function supabaseStore(admin: Admin): PaymeStore {
       await fulfillOrder(admin, order, {
         provider: "payme",
         providerRef: tx.paycom_transaction_id,
-        amountTiyin: tx.amount,
+        amount: Math.round(tx.amount / 100),
+        currency: "UZS",
       });
     },
 
@@ -135,7 +136,8 @@ function supabaseStore(admin: Admin): PaymeStore {
       await revertOrder(admin, order, {
         provider: "payme",
         providerRef: tx.paycom_transaction_id,
-        amountTiyin: tx.amount,
+        amount: Math.round(tx.amount / 100),
+        currency: "UZS",
       });
     },
   };

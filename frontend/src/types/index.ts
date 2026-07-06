@@ -28,7 +28,20 @@ export type CampaignStatus = "draft" | "open" | "active" | "completed" | "cancel
 
 export type BidStatus = "pending" | "accepted" | "rejected";
 
-export type DealStatus = "active" | "content_submitted" | "approved" | "completed" | "cancelled";
+// New escrow lifecycle + legacy statuses (kept valid for existing rows/seeds).
+export type DealStatus =
+  | "pending"
+  | "funded"
+  | "in_progress"
+  | "delivered"
+  | "released"
+  | "disputed"
+  // legacy
+  | "active"
+  | "content_submitted"
+  | "approved"
+  | "completed"
+  | "cancelled";
 
 export type ScrapingStatus = "pending" | "processing" | "completed" | "failed";
 
@@ -182,6 +195,40 @@ export interface Notification {
   message: string;
   link: string | null;
   is_read: boolean;
+  created_at: string;
+}
+
+export type DealPaymentStatus = "held" | "released" | "refunded" | "paid_out";
+
+export interface DealPayment {
+  id: string;
+  deal_id: string;
+  brand_user_id: string | null;
+  amount_cents: number; // gross, USD cents
+  fee_cents: number; // platform commission
+  payout_cents: number; // influencer share
+  currency: string;
+  provider: string;
+  provider_ref: string | null;
+  status: DealPaymentStatus;
+  held_at: string;
+  released_at: string | null;
+  created_at: string;
+}
+
+export type PayoutStatus = "pending" | "paid" | "failed";
+
+export interface Payout {
+  id: string;
+  deal_payment_id: string;
+  deal_id: string;
+  influencer_id: string;
+  amount_cents: number;
+  currency: string;
+  status: PayoutStatus;
+  paid_at: string | null;
+  paid_by: string | null;
+  note: string | null;
   created_at: string;
 }
 
