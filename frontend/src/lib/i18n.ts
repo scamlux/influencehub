@@ -183,6 +183,7 @@ const en: Dict = {
   "common.deactivate": "Deactivate",
   "common.demo": "demo",
   "common.prev": "Previous",
+  "common.undo": "Undo",
   "common.searchByNameEmail": "Search by name or email...",
   "common.noMatches": "No matches found",
 
@@ -622,6 +623,7 @@ const uz: Dict = {
   "common.deactivate": "Faolsizlantirish",
   "common.demo": "demo",
   "common.prev": "Oldingi",
+  "common.undo": "Bekor qilish",
   "common.searchByNameEmail": "Ism yoki email bo‘yicha qidirish...",
   "common.noMatches": "Mos keladigan natija yo‘q",
 
@@ -1043,6 +1045,7 @@ const ru: Dict = {
   "common.deactivate": "Деактивировать",
   "common.demo": "демо",
   "common.prev": "Назад",
+  "common.undo": "Отменить",
   "common.searchByNameEmail": "Поиск по имени или email...",
   "common.noMatches": "Ничего не найдено",
 

@@ -53,14 +53,25 @@ export function BidForm({
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     try {
-      await bids.create({
+      const bid = await bids.create({
         campaign_id: campaign.id,
         influencer_id: influencerId,
         proposed_price: values.proposed_price,
         proposal: values.proposal,
         delivery_days: values.delivery_days,
       });
-      toast({ title: t("common.success"), variant: "success" });
+      toast({
+        title: t("campaigns.bidSubmitted"),
+        variant: "success",
+        // Reversible: let the influencer pull the bid straight back.
+        action: {
+          label: t("common.undo"),
+          onClick: async () => {
+            await bids.withdraw(bid.id);
+            onSubmitted?.();
+          },
+        },
+      });
       reset();
       onOpenChange(false);
       onSubmitted?.();

@@ -1011,6 +1011,21 @@ export const bids = {
     if (bid) bid.status = "rejected";
     save();
   },
+  // Influencer withdraws their own still-pending bid (powers the Undo toast).
+  async withdraw(bidId: string): Promise<void> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { error } = await supabase
+        .from("bids")
+        .delete()
+        .eq("id", bidId)
+        .eq("status", "pending");
+      if (error) throw new Error(error.message);
+      return;
+    }
+    const i = mockDB.bids.findIndex((b) => b.id === bidId && b.status === "pending");
+    if (i >= 0) mockDB.bids.splice(i, 1);
+    save();
+  },
 };
 
 export const deals = {

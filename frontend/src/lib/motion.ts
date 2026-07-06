@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { useReducedMotion, type Transition, type Variants } from "motion/react";
 
 /* =============================================================================
@@ -120,42 +119,4 @@ export const hoverScale = {
  */
 export function usePrefersReducedMotion(): boolean {
   return useReducedMotion() ?? false;
-}
-
-/**
- * Count-up from 0 → `value` over `durationMs`, honoring reduced motion (jumps
- * straight to the value). Returns the current animated number.
- */
-export function useCountUp(value: number, durationMs = 900): number {
-  const reduced = usePrefersReducedMotion();
-  const [display, setDisplay] = useState(reduced ? value : 0);
-  const frame = useRef<number>();
-  const from = useRef(0);
-
-  useEffect(() => {
-    if (reduced) {
-      setDisplay(value);
-      return;
-    }
-    const start = performance.now();
-    const startValue = from.current;
-    const delta = value - startValue;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / durationMs);
-      // easeOutExpo for a confident settle.
-      const eased = p === 1 ? 1 : 1 - Math.pow(2, -10 * p);
-      setDisplay(startValue + delta * eased);
-      if (p < 1) {
-        frame.current = requestAnimationFrame(tick);
-      } else {
-        from.current = value;
-      }
-    };
-    frame.current = requestAnimationFrame(tick);
-    return () => {
-      if (frame.current) cancelAnimationFrame(frame.current);
-    };
-  }, [value, durationMs, reduced]);
-
-  return display;
 }
