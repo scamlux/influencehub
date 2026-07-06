@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { mockDB, persist, resetMockDB } from "./mock-data";
 import { supabase, USE_MOCK_DATA } from "./supabase";
 import { uid } from "./utils";
@@ -686,6 +687,37 @@ export const brands = {
     }
     return mockDB.brand_profiles.find((b) => b.id === brandProfileId)?.user_id ?? null;
   },
+  // Display names for a set of brand profile ids (brand_profiles → profiles).
+  async names(brandProfileIds: string[]): Promise<Record<string, string>> {
+    const ids = [...new Set(brandProfileIds)];
+    if (!ids.length) return {};
+    if (!USE_MOCK_DATA && supabase) {
+      const { data: brandRows, error } = await supabase
+        .from("brand_profiles")
+        .select("id, user_id")
+        .in("id", ids);
+      if (error) throw new Error(error.message);
+      const userIds = (brandRows ?? []).map((b) => b.user_id as string);
+      const { data: profileRows, error: pErr } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      if (pErr) throw new Error(pErr.message);
+      const nameByUser = Object.fromEntries(
+        (profileRows ?? []).map((p) => [p.id as string, p.full_name as string]),
+      );
+      return Object.fromEntries(
+        (brandRows ?? []).map((b) => [b.id as string, nameByUser[b.user_id as string] ?? "Brand"]),
+      );
+    }
+    const out: Record<string, string> = {};
+    for (const id of ids) {
+      const bp = mockDB.brand_profiles.find((b) => b.id === id);
+      const profile = bp ? mockDB.profiles.find((p) => p.id === bp.user_id) : null;
+      out[id] = profile?.full_name ?? "Brand";
+    }
+    return out;
+  },
 };
 
 // ─── subscriptions ───────────────────────────────────────────────────────────────
@@ -1060,6 +1092,12 @@ export const deals = {
 };
 
 // ─── messages (realtime chat) ──────────────────────────────────────────────────────
+type TypingPayload = { userId: string };
+const typingChannels = new Map<
+  string,
+  { ch: RealtimeChannel; listeners: Set<(p: TypingPayload) => void>; refs: number }
+>();
+
 export const messages = {
   async forDeal(dealId: string): Promise<Message[]> {
     if (!USE_MOCK_DATA && supabase) {
@@ -1095,6 +1133,29 @@ export const messages = {
     mockDB.messages.push(msg);
     save();
     emit(`deal-${dealId}`, msg);
+    // Mirror the 018_message_notifications.sql trigger: one unread "message"
+    // notification per chat for the counterpart.
+    const deal = mockDB.deals.find((d) => d.id === dealId);
+    if (deal) {
+      const brandUser = mockDB.brand_profiles.find((b) => b.id === deal.brand_id)?.user_id;
+      const infUser = mockDB.influencer_profiles.find((i) => i.id === deal.influencer_id)?.user_id;
+      const recipient = senderId === brandUser ? infUser : senderId === infUser ? brandUser : null;
+      if (recipient) {
+        const role = recipient === brandUser ? "brand" : "influencer";
+        const link = `/${role}/chat/${dealId}`;
+        const alreadyUnread = mockDB.notifications.some(
+          (n) => n.user_id === recipient && n.type === "message" && n.link === link && !n.is_read,
+        );
+        if (!alreadyUnread) {
+          notifications.push(recipient, {
+            type: "message",
+            title: "New message",
+            message: content.slice(0, 120),
+            link,
+          });
+        }
+      }
+    }
     return msg;
   },
   // Stream new messages for a deal. Supabase Realtime (postgres_changes, RLS-filtered)
@@ -1117,6 +1178,51 @@ export const messages = {
       };
     }
     return subscribe(`deal-${dealId}`, cb);
+  },
+  // Ephemeral typing indicator over Realtime broadcast (nothing persisted).
+  // Broadcast needs sender and listeners on one shared topic, so unlike the
+  // postgres_changes subscriptions above the channel is refcounted per deal
+  // instead of getting a unique suffix.
+  subscribeTyping(dealId: string, cb: (p: TypingPayload) => void): () => void {
+    if (!USE_MOCK_DATA && supabase) {
+      const sb = supabase;
+      let entry = typingChannels.get(dealId);
+      if (!entry) {
+        const listeners = new Set<(p: TypingPayload) => void>();
+        const ch = sb
+          .channel(`typing:deal:${dealId}`, { config: { broadcast: { self: false } } })
+          .on("broadcast", { event: "typing" }, (msg) => {
+            const p = msg.payload as TypingPayload;
+            listeners.forEach((l) => l(p));
+          })
+          .subscribe();
+        entry = { ch, listeners, refs: 0 };
+        typingChannels.set(dealId, entry);
+      }
+      entry.refs += 1;
+      entry.listeners.add(cb);
+      return () => {
+        const e = typingChannels.get(dealId);
+        if (!e) return;
+        e.listeners.delete(cb);
+        e.refs -= 1;
+        if (e.refs <= 0) {
+          typingChannels.delete(dealId);
+          sb.removeChannel(e.ch);
+        }
+      };
+    }
+    return subscribe(`typing-${dealId}`, cb);
+  },
+  async sendTyping(dealId: string, userId: string): Promise<void> {
+    if (!USE_MOCK_DATA && supabase) {
+      const entry = typingChannels.get(dealId);
+      if (entry) {
+        await entry.ch.send({ type: "broadcast", event: "typing", payload: { userId } });
+      }
+      return;
+    }
+    emit(`typing-${dealId}`, { userId });
   },
 };
 
@@ -1166,6 +1272,27 @@ export const notifications = {
     const n = mockDB.notifications.find((x) => x.id === id);
     if (n) n.is_read = true;
     save();
+  },
+  // Mark all unread notifications pointing at a given in-app link as read
+  // (e.g. clear the chat badge when the user opens that chat).
+  async markReadByLink(userId: string, link: string): Promise<void> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", userId)
+        .eq("link", link)
+        .eq("is_read", false);
+      if (error) throw new Error(error.message);
+      return;
+    }
+    const unread = mockDB.notifications.filter(
+      (n) => n.user_id === userId && n.link === link && !n.is_read,
+    );
+    if (!unread.length) return;
+    unread.forEach((n) => (n.is_read = true));
+    save();
+    emit(`user-notifications-${userId}`, null);
   },
   async markAllRead(userId: string): Promise<void> {
     if (!USE_MOCK_DATA && supabase) {
