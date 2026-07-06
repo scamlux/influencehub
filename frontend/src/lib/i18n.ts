@@ -98,7 +98,8 @@ const en: Dict = {
   "league.sortHint.by_followers": "Most followers first.",
   "league.sortHint.by_engagement":
     "Highest engagement first. Accounts under 10K followers are shown lower to filter out inflated rates.",
-  "league.sortHint.by_price": "Lowest ad price first. Profiles without public pricing are shown last.",
+  "league.sortHint.by_price":
+    "Lowest ad price first. Profiles without public pricing are shown last.",
 
   // profile
   "profile.contacts": "Contact Information",

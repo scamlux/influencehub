@@ -8,13 +8,7 @@
 import type { DealStatus, UserRole } from "@/types";
 
 // The escrow lifecycle shown in the stepper, in order.
-export const DEAL_STEPS = [
-  "pending",
-  "funded",
-  "in_progress",
-  "delivered",
-  "released",
-] as const;
+export const DEAL_STEPS = ["pending", "funded", "in_progress", "delivered", "released"] as const;
 export type DealStep = (typeof DEAL_STEPS)[number];
 
 // Legacy statuses map onto a canonical step so old rows still render on the
@@ -77,9 +71,7 @@ export function nextStatus(from: DealStatus, action: DealAction): DealStatus | n
 }
 
 export function canTransition(from: DealStatus, action: DealAction, role: UserRole): boolean {
-  return TRANSITIONS.some(
-    (t) => t.from === from && t.action === action && t.roles.includes(role),
-  );
+  return TRANSITIONS.some((t) => t.from === from && t.action === action && t.roles.includes(role));
 }
 
 /** Actions available to `role` from the current status (for rendering controls). */

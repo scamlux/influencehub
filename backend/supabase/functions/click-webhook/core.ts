@@ -92,7 +92,11 @@ export function clickAmountToTiyin(amount: string | undefined): number {
   return Math.round(Number(amount ?? "0") * 100);
 }
 
-async function verifySign(p: ClickParams, secretKey: string, md5: Md5): Promise<boolean> {
+async function verifySign(
+  p: ClickParams,
+  secretKey: string,
+  md5: Md5,
+): Promise<boolean> {
   const action = p.action ?? "";
   const base =
     action === "1"
@@ -108,10 +112,18 @@ export async function handleClickRequest(
   md5: Md5,
   store: ClickStore,
 ): Promise<ClickResponse> {
-  if (!p.click_trans_id || !p.merchant_trans_id || !p.sign_time || !p.sign_string) {
+  if (
+    !p.click_trans_id ||
+    !p.merchant_trans_id ||
+    !p.sign_time ||
+    !p.sign_string
+  ) {
     return respond(p, ClickError.RequestError, "Missing required parameters");
   }
-  if (p.service_id !== cfg.serviceId || !(await verifySign(p, cfg.secretKey, md5))) {
+  if (
+    p.service_id !== cfg.serviceId ||
+    !(await verifySign(p, cfg.secretKey, md5))
+  ) {
     return respond(p, ClickError.SignFailed, "Sign check failed");
   }
 
@@ -150,8 +162,15 @@ export async function handleClickRequest(
   // ─── Complete ──────────────────────────────────────────────────────────────
   if (p.action === "1") {
     const tx = await store.getByClickTransId(p.click_trans_id);
-    if (!tx || String(tx.merchant_prepare_id) !== String(p.merchant_prepare_id ?? "")) {
-      return respond(p, ClickError.TransactionNotFound, "Transaction not found");
+    if (
+      !tx ||
+      String(tx.merchant_prepare_id) !== String(p.merchant_prepare_id ?? "")
+    ) {
+      return respond(
+        p,
+        ClickError.TransactionNotFound,
+        "Transaction not found",
+      );
     }
     if (tx.status === "cancelled") {
       return respond(p, ClickError.Cancelled, "Transaction cancelled");

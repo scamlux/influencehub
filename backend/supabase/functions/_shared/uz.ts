@@ -4,7 +4,10 @@
 
 export type PlanType = "brand_pro" | "influencer_sync" | "influencer_feature";
 
-export const PLANS_USD: Record<PlanType, { amount: number; cadence: "month" | "day" }> = {
+export const PLANS_USD: Record<
+  PlanType,
+  { amount: number; cadence: "month" | "day" }
+> = {
   brand_pro: { amount: 29, cadence: "month" },
   influencer_sync: { amount: 5, cadence: "month" },
   influencer_feature: { amount: 10, cadence: "day" },
@@ -34,7 +37,10 @@ export function planExpiry(plan: PlanType, from = new Date()): string {
 /** Platform take rate for escrow deals (T-14). Percent, integer math only. */
 export const PLATFORM_FEE_PCT = 12;
 
-export function splitEscrow(amountCents: number): { feeCents: number; payoutCents: number } {
+export function splitEscrow(amountCents: number): {
+  feeCents: number;
+  payoutCents: number;
+} {
   const feeCents = Math.round((amountCents * PLATFORM_FEE_PCT) / 100);
   return { feeCents, payoutCents: amountCents - feeCents };
 }

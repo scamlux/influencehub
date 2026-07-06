@@ -15,7 +15,12 @@
 
 import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient } from "../_shared/client.ts";
-import { fulfillOrder, revertOrder, validateOrder, type OrderRef } from "../_shared/fulfill.ts";
+import {
+  fulfillOrder,
+  revertOrder,
+  validateOrder,
+  type OrderRef,
+} from "../_shared/fulfill.ts";
 import { PLANS_USD, type PlanType } from "../_shared/uz.ts";
 import { clientIp, rateLimit } from "../_shared/rate-limit.ts";
 import {
@@ -32,7 +37,11 @@ type Admin = ReturnType<typeof adminClient>;
 function accountToOrder(account: PaymeAccount): OrderRef | null {
   if (account.deal_id) return { kind: "deal", dealId: account.deal_id };
   if (account.user_id && account.plan && account.plan in PLANS_USD) {
-    return { kind: "subscription", userId: account.user_id, plan: account.plan as PlanType };
+    return {
+      kind: "subscription",
+      userId: account.user_id,
+      plan: account.plan as PlanType,
+    };
   }
   return null;
 }
@@ -107,14 +116,21 @@ function supabaseStore(admin: Admin): PaymeStore {
     async validateAccount(account) {
       const order = accountToOrder(account);
       if (!order) {
-        return { ok: false, code: PaymeError.AccountNotFound, message: "Unknown account" };
+        return {
+          ok: false,
+          code: PaymeError.AccountNotFound,
+          message: "Unknown account",
+        };
       }
       const v = await validateOrder(admin, order);
       if (!v.ok) {
         return {
           ok: false,
           code: PaymeError.AccountNotFound,
-          message: v.reason === "not_found" ? "Order not found" : "Order is not payable",
+          message:
+            v.reason === "not_found"
+              ? "Order not found"
+              : "Order is not payable",
         };
       }
       return v;
@@ -152,28 +168,45 @@ Deno.serve(async (req) => {
   // while still capping abuse. Over-limit returns a protocol error (HTTP 200).
   const rl = rateLimit(`payme:${clientIp(req)}`, { limit: 120, windowSec: 60 });
   if (!rl.allowed) {
-    return json({ id: null, error: { code: -32400, message: "Too many requests" } }, 200);
+    return json(
+      { id: null, error: { code: -32400, message: "Too many requests" } },
+      200,
+    );
   }
 
   const keys = [
     Deno.env.get("PAYME_MERCHANT_KEY") ?? "",
     Deno.env.get("PAYME_MERCHANT_TEST_KEY") ?? "",
   ].filter(Boolean);
-  const authorized = keys.length > 0 && isAuthorized(req.headers.get("Authorization"), keys);
+  const authorized =
+    keys.length > 0 && isAuthorized(req.headers.get("Authorization"), keys);
 
   let body: unknown = null;
   try {
     body = await req.json();
   } catch {
-    return json({ id: null, error: { code: PaymeError.ParseError, message: "Parse error" } }, 200);
+    return json(
+      {
+        id: null,
+        error: { code: PaymeError.ParseError, message: "Parse error" },
+      },
+      200,
+    );
   }
 
   try {
-    const response = await handlePaymeRpc(body, supabaseStore(adminClient()), authorized);
+    const response = await handlePaymeRpc(
+      body,
+      supabaseStore(adminClient()),
+      authorized,
+    );
     // Payme expects HTTP 200 even for protocol errors.
     return json({ jsonrpc: "2.0", ...response }, 200);
   } catch (e) {
     console.error("payme-webhook failure:", e);
-    return json({ id: null, error: { code: -32400, message: "Internal error" } }, 200);
+    return json(
+      { id: null, error: { code: -32400, message: "Internal error" } },
+      200,
+    );
   }
 });

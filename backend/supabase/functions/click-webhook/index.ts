@@ -12,7 +12,11 @@ import { crypto } from "jsr:@std/crypto@1";
 import { encodeHex } from "jsr:@std/encoding@1/hex";
 import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient } from "../_shared/client.ts";
-import { fulfillOrder, parseOrderRef, validateOrder } from "../_shared/fulfill.ts";
+import {
+  fulfillOrder,
+  parseOrderRef,
+  validateOrder,
+} from "../_shared/fulfill.ts";
 import { clientIp, rateLimit } from "../_shared/rate-limit.ts";
 import {
   ClickError,
@@ -44,13 +48,25 @@ function supabaseStore(admin: Admin): ClickStore {
     async validateOrder(merchantTransId) {
       const order = parseOrderRef(merchantTransId);
       if (!order) {
-        return { ok: false, error: ClickError.OrderNotFound, note: "Unknown order reference" };
+        return {
+          ok: false,
+          error: ClickError.OrderNotFound,
+          note: "Unknown order reference",
+        };
       }
       const v = await validateOrder(admin, order);
       if (!v.ok) {
         return v.reason === "not_found"
-          ? { ok: false, error: ClickError.OrderNotFound, note: "Order not found" }
-          : { ok: false, error: ClickError.AlreadyPaid, note: "Order is not payable" };
+          ? {
+              ok: false,
+              error: ClickError.OrderNotFound,
+              note: "Order not found",
+            }
+          : {
+              ok: false,
+              error: ClickError.AlreadyPaid,
+              note: "Order is not payable",
+            };
       }
       return v;
     },
@@ -88,7 +104,11 @@ function supabaseStore(admin: Admin): ClickStore {
     async markCompleted(clickTransId) {
       const { error } = await admin
         .from("click_transactions")
-        .update({ status: "completed", action: 1, completed_at: new Date().toISOString() })
+        .update({
+          status: "completed",
+          action: 1,
+          completed_at: new Date().toISOString(),
+        })
         .eq("click_trans_id", clickTransId);
       if (error) throw new Error(error.message);
     },
@@ -121,7 +141,9 @@ async function parseParams(req: Request): Promise<ClickParams> {
   }
   // Click posts application/x-www-form-urlencoded.
   const form = await req.formData();
-  return Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)])) as ClickParams;
+  return Object.fromEntries(
+    [...form.entries()].map(([k, v]) => [k, String(v)]),
+  ) as ClickParams;
 }
 
 Deno.serve(async (req) => {
@@ -129,7 +151,8 @@ Deno.serve(async (req) => {
   if (pre) return pre;
 
   const rl = rateLimit(`click:${clientIp(req)}`, { limit: 120, windowSec: 60 });
-  if (!rl.allowed) return json({ error: -8, error_note: "Too many requests" }, 200);
+  if (!rl.allowed)
+    return json({ error: -8, error_note: "Too many requests" }, 200);
 
   const secretKey = Deno.env.get("CLICK_SECRET_KEY") ?? "";
   const serviceId = Deno.env.get("CLICK_SERVICE_ID") ?? "";

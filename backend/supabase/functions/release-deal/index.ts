@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
 
-  const rl = rateLimit(`release-deal:${clientIp(req)}`, { limit: 20, windowSec: 60 });
+  const rl = rateLimit(`release-deal:${clientIp(req)}`, {
+    limit: 20,
+    windowSec: 60,
+  });
   if (!rl.allowed) return tooManyRequests(rl.retryAfterSec);
 
   try {
@@ -55,9 +58,12 @@ Deno.serve(async (req) => {
     const isDealBrand = brand?.user_id === user.id;
 
     const canRelease =
-      (isDealBrand && deal.status === "delivered" && resolution === "released") ||
+      (isDealBrand &&
+        deal.status === "delivered" &&
+        resolution === "released") ||
       (isAdmin && ["disputed", "delivered"].includes(deal.status));
-    if (!canRelease) return json({ error: "Not allowed for this deal state" }, 403);
+    if (!canRelease)
+      return json({ error: "Not allowed for this deal state" }, 403);
 
     const { data: payment } = await admin
       .from("deal_payments")
@@ -65,10 +71,14 @@ Deno.serve(async (req) => {
       .eq("deal_id", deal.id)
       .eq("status", "held")
       .maybeSingle();
-    if (!payment) return json({ error: "No held escrow payment for this deal" }, 409);
+    if (!payment)
+      return json({ error: "No held escrow payment for this deal" }, 409);
 
     if (resolution === "refunded") {
-      await admin.from("deal_payments").update({ status: "refunded" }).eq("id", payment.id);
+      await admin
+        .from("deal_payments")
+        .update({ status: "refunded" })
+        .eq("id", payment.id);
       await admin
         .from("deals")
         .update({ status: "cancelled", completed_at: new Date().toISOString() })

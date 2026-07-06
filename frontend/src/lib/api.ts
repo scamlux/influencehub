@@ -1122,9 +1122,7 @@ export const deals = {
       if (error) throw new Error(error.message);
       return (data as DealPayment) ?? null;
     }
-    return (
-      [...mockDB.deal_payments].reverse().find((p) => p.deal_id === dealId) ?? null
-    );
+    return [...mockDB.deal_payments].reverse().find((p) => p.deal_id === dealId) ?? null;
   },
 
   // Brand funds the deal into escrow. Live mode delegates to the fund-deal
@@ -1197,10 +1195,7 @@ export const deals = {
         });
         if (error) throw new Error(error.message);
       } else {
-        const target = nextStatus(
-          (await this.get(dealId))?.status ?? "pending",
-          action,
-        );
+        const target = nextStatus((await this.get(dealId))?.status ?? "pending", action);
         if (!target) throw new Error(`Illegal transition: ${action}`);
         const patch: Partial<Deal> = { status: target };
         if (opts.contentUrl) patch.content_url = opts.contentUrl;

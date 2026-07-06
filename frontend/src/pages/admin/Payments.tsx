@@ -48,9 +48,7 @@ export default function AdminPayments() {
     setEmails(Object.fromEntries(users.map((u) => [u.id, u.email])));
     const uniqueInf = [...new Set(pouts.map((p) => p.influencer_id))];
     const resolved = await Promise.all(uniqueInf.map((id) => influencers.get(id)));
-    setNames(
-      Object.fromEntries(uniqueInf.map((id, i) => [id, resolved[i]?.display_name ?? "—"])),
-    );
+    setNames(Object.fromEntries(uniqueInf.map((id, i) => [id, resolved[i]?.display_name ?? "—"])));
   }, []);
 
   useEffect(() => {
@@ -153,7 +151,9 @@ export default function AdminPayments() {
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {p.stripe_session_id ?? "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(p.created_at)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(p.created_at)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

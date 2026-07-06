@@ -56,7 +56,10 @@ export type AccountValidation =
 export interface PaymeStore {
   getTransaction(paycomId: string): Promise<PaymeTx | null>;
   /** Another *created* (state=1) transaction for the same account. */
-  findPendingForAccount(account: PaymeAccount, excludePaycomId: string): Promise<PaymeTx | null>;
+  findPendingForAccount(
+    account: PaymeAccount,
+    excludePaycomId: string,
+  ): Promise<PaymeTx | null>;
   insertTransaction(tx: PaymeTx): Promise<void>;
   updateTransaction(paycomId: string, patch: Partial<PaymeTx>): Promise<void>;
   validateAccount(account: PaymeAccount): Promise<AccountValidation>;
@@ -83,7 +86,10 @@ function err(id: RpcRequest["id"], code: number, message: string): RpcResponse {
   return { id: id ?? null, error: { code, message } };
 }
 
-function ok(id: RpcRequest["id"], result: Record<string, unknown>): RpcResponse {
+function ok(
+  id: RpcRequest["id"],
+  result: Record<string, unknown>,
+): RpcResponse {
   return { id: id ?? null, result };
 }
 
@@ -110,7 +116,11 @@ export async function handlePaymeRpc(
 ): Promise<RpcResponse> {
   const req = (body ?? {}) as RpcRequest;
   if (!authorized) {
-    return err(req.id, PaymeError.InvalidAuthorization, "Invalid authorization");
+    return err(
+      req.id,
+      PaymeError.InvalidAuthorization,
+      "Invalid authorization",
+    );
   }
   const params = req.params ?? {};
 
@@ -135,7 +145,11 @@ export async function handlePaymeRpc(
       if (existing) {
         // Idempotent retry of the same transaction.
         if (existing.state !== TxState.Created) {
-          return err(req.id, PaymeError.CannotPerform, "Transaction already finalized");
+          return err(
+            req.id,
+            PaymeError.CannotPerform,
+            "Transaction already finalized",
+          );
         }
         return ok(req.id, {
           transaction: existing.paycom_transaction_id,
@@ -152,7 +166,11 @@ export async function handlePaymeRpc(
       // One pending transaction per account at a time (spec recommendation).
       const pending = await store.findPendingForAccount(account, paycomId);
       if (pending) {
-        return err(req.id, PaymeError.AccountBusy, "Another transaction is pending for this account");
+        return err(
+          req.id,
+          PaymeError.AccountBusy,
+          "Another transaction is pending for this account",
+        );
       }
 
       const tx: PaymeTx = {
@@ -177,7 +195,12 @@ export async function handlePaymeRpc(
     case "PerformTransaction": {
       const paycomId = String(params.id ?? "");
       const tx = await store.getTransaction(paycomId);
-      if (!tx) return err(req.id, PaymeError.TransactionNotFound, "Transaction not found");
+      if (!tx)
+        return err(
+          req.id,
+          PaymeError.TransactionNotFound,
+          "Transaction not found",
+        );
 
       if (tx.state === TxState.Performed) {
         // Idempotent: repeated Perform returns the original result.
@@ -188,12 +211,19 @@ export async function handlePaymeRpc(
         });
       }
       if (tx.state !== TxState.Created) {
-        return err(req.id, PaymeError.CannotPerform, "Transaction is cancelled");
+        return err(
+          req.id,
+          PaymeError.CannotPerform,
+          "Transaction is cancelled",
+        );
       }
 
       const perform_time = store.now();
       await store.onPerform(tx);
-      await store.updateTransaction(paycomId, { state: TxState.Performed, perform_time });
+      await store.updateTransaction(paycomId, {
+        state: TxState.Performed,
+        perform_time,
+      });
       return ok(req.id, {
         transaction: tx.paycom_transaction_id,
         state: TxState.Performed,
@@ -205,10 +235,18 @@ export async function handlePaymeRpc(
       const paycomId = String(params.id ?? "");
       const reason = Number(params.reason ?? 0);
       const tx = await store.getTransaction(paycomId);
-      if (!tx) return err(req.id, PaymeError.TransactionNotFound, "Transaction not found");
+      if (!tx)
+        return err(
+          req.id,
+          PaymeError.TransactionNotFound,
+          "Transaction not found",
+        );
 
       // Idempotent: already cancelled → return stored result.
-      if (tx.state === TxState.Cancelled || tx.state === TxState.CancelledAfterPerform) {
+      if (
+        tx.state === TxState.Cancelled ||
+        tx.state === TxState.CancelledAfterPerform
+      ) {
         return ok(req.id, {
           transaction: tx.paycom_transaction_id,
           state: tx.state,
@@ -230,7 +268,11 @@ export async function handlePaymeRpc(
           cancel_time,
         });
       }
-      await store.updateTransaction(paycomId, { state: TxState.Cancelled, cancel_time, reason });
+      await store.updateTransaction(paycomId, {
+        state: TxState.Cancelled,
+        cancel_time,
+        reason,
+      });
       return ok(req.id, {
         transaction: tx.paycom_transaction_id,
         state: TxState.Cancelled,
@@ -241,17 +283,29 @@ export async function handlePaymeRpc(
     case "CheckTransaction": {
       const paycomId = String(params.id ?? "");
       const tx = await store.getTransaction(paycomId);
-      if (!tx) return err(req.id, PaymeError.TransactionNotFound, "Transaction not found");
+      if (!tx)
+        return err(
+          req.id,
+          PaymeError.TransactionNotFound,
+          "Transaction not found",
+        );
       return ok(req.id, txResult(tx));
     }
 
     default:
-      return err(req.id, PaymeError.MethodNotFound, `Method not found: ${req.method ?? ""}`);
+      return err(
+        req.id,
+        PaymeError.MethodNotFound,
+        `Method not found: ${req.method ?? ""}`,
+      );
   }
 }
 
 /** Verify Payme's Basic auth header: base64("Paycom:<merchant key>"). */
-export function isAuthorized(authHeader: string | null, merchantKeys: string[]): boolean {
+export function isAuthorized(
+  authHeader: string | null,
+  merchantKeys: string[],
+): boolean {
   if (!authHeader?.startsWith("Basic ")) return false;
   let decoded: string;
   try {

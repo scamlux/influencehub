@@ -53,7 +53,10 @@ export function rateLimit(
 }
 
 /** Convenience: build a 429 Response with a Retry-After header. */
-export function tooManyRequests(retryAfterSec: number, body: unknown = { error: "Too many requests" }): Response {
+export function tooManyRequests(
+  retryAfterSec: number,
+  body: unknown = { error: "Too many requests" },
+): Response {
   return new Response(JSON.stringify(body), {
     status: 429,
     headers: {

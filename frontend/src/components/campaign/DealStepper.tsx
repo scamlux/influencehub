@@ -1,5 +1,12 @@
 import { motion } from "motion/react";
-import { Check, CircleDollarSign, Hammer, PackageCheck, PartyPopper, AlertTriangle } from "lucide-react";
+import {
+  Check,
+  CircleDollarSign,
+  Hammer,
+  PackageCheck,
+  PartyPopper,
+  AlertTriangle,
+} from "lucide-react";
 import { DEAL_STEPS, stepIndex, isDisputed, isCancelled } from "@/lib/deal-status";
 import { transition } from "@/lib/motion";
 import { useLanguage } from "@/hooks/useLanguage";

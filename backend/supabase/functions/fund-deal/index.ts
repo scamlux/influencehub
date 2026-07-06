@@ -20,14 +20,22 @@ Deno.serve(async (req) => {
   const pre = handleOptions(req);
   if (pre) return pre;
 
-  const rl = rateLimit(`fund-deal:${clientIp(req)}`, { limit: 20, windowSec: 60 });
+  const rl = rateLimit(`fund-deal:${clientIp(req)}`, {
+    limit: 20,
+    windowSec: 60,
+  });
   if (!rl.allowed) return tooManyRequests(rl.retryAfterSec);
 
   try {
     const user = await getUser(req);
     if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const { deal_id, provider = "stripe", success_url, cancel_url } = await req.json();
+    const {
+      deal_id,
+      provider = "stripe",
+      success_url,
+      cancel_url,
+    } = await req.json();
     if (!deal_id) return json({ error: "deal_id is required" }, 400);
 
     const admin = adminClient();
@@ -44,7 +52,8 @@ Deno.serve(async (req) => {
       .select("user_id")
       .eq("id", deal.brand_id)
       .maybeSingle();
-    if (brand?.user_id !== user.id) return json({ error: "Only the deal's brand can fund it" }, 403);
+    if (brand?.user_id !== user.id)
+      return json({ error: "Only the deal's brand can fund it" }, 403);
 
     const order = { kind: "deal", dealId: deal.id } as const;
     const v = await validateOrder(admin, order);
@@ -54,7 +63,9 @@ Deno.serve(async (req) => {
     if (provider === "payme") {
       const merchant = Deno.env.get("PAYME_MERCHANT_ID");
       if (merchant) {
-        const payload = btoa(`m=${merchant};ac.deal_id=${deal.id};a=${v.expectedTiyin}`);
+        const payload = btoa(
+          `m=${merchant};ac.deal_id=${deal.id};a=${v.expectedTiyin}`,
+        );
         return json({ checkout_url: `https://checkout.paycom.uz/${payload}` });
       }
     }
@@ -89,7 +100,9 @@ Deno.serve(async (req) => {
               price_data: {
                 currency: "usd",
                 unit_amount: Math.round(Number(deal.agreed_price) * 100),
-                product_data: { name: `Deal escrow #${String(deal.id).slice(0, 8)}` },
+                product_data: {
+                  name: `Deal escrow #${String(deal.id).slice(0, 8)}`,
+                },
               },
               quantity: 1,
             },

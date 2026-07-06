@@ -107,9 +107,7 @@ export default function DealDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-lg font-semibold">
-            {campaignTitle || t("deals.title")}
-          </h1>
+          <h1 className="truncate text-lg font-semibold">{campaignTitle || t("deals.title")}</h1>
           <p className="truncate text-sm text-muted-foreground">
             {counterpart} · {t("deals.agreedPrice")}: {formatUSD(gross)}
           </p>
@@ -216,9 +214,7 @@ function Money({
 }) {
   return (
     <div
-      className={`rounded-xl border p-4 ${
-        accent ? "border-primary/40 bg-primary/5" : "bg-card"
-      }`}
+      className={`rounded-xl border p-4 ${accent ? "border-primary/40 bg-primary/5" : "bg-card"}`}
     >
       <p className="flex items-center gap-1 text-xs text-muted-foreground">
         {Icon && <Icon className="h-3.5 w-3.5" />}

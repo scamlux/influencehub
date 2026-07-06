@@ -24,10 +24,7 @@ export function Celebration({ fireKey }: { fireKey: number }) {
   return (
     <AnimatePresence>
       {active && (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 z-[100] overflow-hidden"
-        >
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-[100] overflow-hidden">
           {Array.from({ length: PIECES }).map((_, i) => {
             // Deterministic spread from the index so we don't need Math.random.
             const angle = (i / PIECES) * Math.PI * 2;
