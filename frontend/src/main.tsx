@@ -9,7 +9,10 @@ import { LanguageProvider } from "./hooks/useLanguage";
 import { CompareProvider } from "./hooks/useCompare";
 import { ToastProvider } from "./components/ui/toast";
 import { USE_MOCK_DATA } from "./lib/supabase";
+import { initSentry } from "./lib/sentry";
 import "./index.css";
+
+initSentry();
 
 // When connected to a real Supabase backend, purge stale keys left by the
 // in-memory mock layer. A leftover `influencehub_session` (a mock user id like
