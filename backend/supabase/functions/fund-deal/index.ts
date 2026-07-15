@@ -1,9 +1,10 @@
 // fund-deal — brand starts escrow funding for a deal (T-14).
 //
 // Body: { deal_id: string, provider?: "payme" | "click" | "stripe" }
-// Returns either { checkout_url } (redirect the browser to the provider) or
-// { funded: true } when no provider is configured — the demo/sandbox path
-// funds the escrow directly so the full flow stays demoable without keys.
+// Returns { checkout_url } (redirect the browser to the provider). When the
+// requested provider has no keys, the request fails closed with a 503 unless
+// the deployment sets ALLOW_MOCK_PAYMENTS=true, in which case the escrow is
+// funded directly ({ funded: true, mock: true }) so demos work without keys.
 //
 // The caller must be the brand that owns the deal, and the deal must be in
 // status "pending". Actual money capture is confirmed by the provider's
@@ -124,14 +125,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── No provider configured: fund directly (demo/sandbox parity) ─────────
-    await fulfillOrder(admin, order, {
-      provider: "mock",
-      providerRef: `direct-${deal.id}`,
-      amount: Number(deal.agreed_price),
-      currency: "USD",
-    });
-    return json({ funded: true });
+    // ── No provider configured ───────────────────────────────────────────────
+    // Fail closed: only fund escrow for free when the deployment has EXPLICITLY
+    // opted into mock payments (demo/sandbox). Otherwise a missing/misconfigured
+    // provider key in production would silently let brands fund deals without
+    // paying — so we surface a 503 instead of faking success.
+    if (Deno.env.get("ALLOW_MOCK_PAYMENTS") === "true") {
+      await fulfillOrder(admin, order, {
+        provider: "mock",
+        providerRef: `direct-${deal.id}`,
+        amount: Number(deal.agreed_price),
+        currency: "USD",
+      });
+      return json({ funded: true, mock: true });
+    }
+    return json(
+      { error: `Payment provider "${provider}" is not configured`, code: "provider_unconfigured" },
+      503,
+    );
   } catch (e) {
     console.error("fund-deal failure:", e);
     return json({ error: String(e) }, 500);
