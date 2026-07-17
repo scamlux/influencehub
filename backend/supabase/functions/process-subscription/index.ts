@@ -6,8 +6,9 @@
 //         provider?: "stripe" | "payme", success_url?, cancel_url? }
 //
 // In live mode it creates a Stripe Checkout Session and returns its URL.
-// If STRIPE_SECRET_KEY is absent (local/mock), it immediately activates the
-// subscription and returns { activated: true } so the UI flow still completes.
+// If no provider key is configured it fails closed with a 503, unless the
+// deployment sets ALLOW_MOCK_PAYMENTS=true — then it activates the subscription
+// directly and returns { activated: true } so demo flows still complete.
 
 import { handleOptions, json } from "../_shared/cors.ts";
 import { adminClient, getUser } from "../_shared/client.ts";
@@ -98,7 +99,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Mock / no-provider path: activate immediately ───────────────────────
+    // ── No provider configured ───────────────────────────────────────────────
+    // Fail closed: only activate a paid plan for free when the deployment has
+    // EXPLICITLY opted into mock payments. Otherwise a missing STRIPE_SECRET_KEY
+    // in production would hand out brand_pro / feature slots for nothing.
+    if (Deno.env.get("ALLOW_MOCK_PAYMENTS") !== "true") {
+      return json(
+        { error: `Payment provider "${provider}" is not configured`, code: "provider_unconfigured" },
+        503,
+      );
+    }
+
     const expires_at = expiryFor(plan);
     const { error } = await admin.from("subscriptions").insert({
       user_id: user.id,
