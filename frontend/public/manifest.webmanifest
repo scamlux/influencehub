@@ -1,0 +1,13 @@
+{
+  "name": "InfluenceHub — Influencer Marketplace",
+  "short_name": "InfluenceHub",
+  "description": "Discover ranked Uzbek creators, run campaigns, and close deals with real-time chat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#ff3399",
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "type": "image/png", "sizes": "180x180", "purpose": "maskable" }
+  ]
+}
