@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { resetMockDB, mockDB } from "./mock-data";
 import { bids, campaigns, subscriptions, favorites, deals, admin } from "./api";
 import { splitEscrow } from "./plans";
 import { uid } from "./utils";
+import type { Subscription } from "@/types";
 
 beforeEach(() => {
   resetMockDB();
@@ -62,6 +63,17 @@ describe("bids.accept (mock data layer)", () => {
   });
 });
 
+const makeSub = (over: Partial<Subscription>): Subscription => ({
+  id: uid(),
+  user_id: uid(),
+  plan_type: "brand_pro",
+  status: "active",
+  expires_at: null,
+  stripe_subscription_id: null,
+  created_at: new Date().toISOString(),
+  ...over,
+});
+
 describe("subscriptions.activeFor", () => {
   it("returns null when the user has no subscription", async () => {
     expect(await subscriptions.activeFor(uid())).toBeNull();
@@ -73,6 +85,36 @@ describe("subscriptions.activeFor", () => {
     const active = await subscriptions.activeFor(userId);
     expect(active?.plan_type).toBe("brand_pro");
     expect(active?.status).toBe("active");
+  });
+
+  it("ignores cancelled and expired subscriptions", async () => {
+    const userId = uid();
+    mockDB.subscriptions.push(
+      makeSub({ user_id: userId, status: "cancelled" }),
+      makeSub({
+        user_id: userId,
+        expires_at: new Date(Date.now() - 60_000).toISOString(),
+      }),
+    );
+    expect(await subscriptions.activeFor(userId)).toBeNull();
+  });
+});
+
+describe("subscriptions.forUser", () => {
+  it("returns only the user's subscriptions, newest first", async () => {
+    const userId = uid();
+    mockDB.subscriptions.push(
+      makeSub({ user_id: userId, created_at: "2024-01-01T00:00:00.000Z", status: "cancelled" }),
+      makeSub({ user_id: userId, created_at: "2025-06-01T00:00:00.000Z" }),
+      makeSub({ user_id: uid(), created_at: "2025-07-01T00:00:00.000Z" }),
+    );
+    const list = await subscriptions.forUser(userId);
+    expect(list).toHaveLength(2);
+    expect(list.every((s) => s.user_id === userId)).toBe(true);
+    expect(list.map((s) => s.created_at)).toEqual([
+      "2025-06-01T00:00:00.000Z",
+      "2024-01-01T00:00:00.000Z",
+    ]);
   });
 });
 
@@ -155,6 +197,71 @@ describe("deals escrow flow (mock data layer)", () => {
     await deals.advance(deal.id, "resolve_refund", "admin");
     expect((await deals.get(deal.id))?.status).toBe("cancelled");
     expect((await deals.paymentFor(deal.id))?.status).toBe("refunded");
+  });
+});
+
+describe("admin scraping queue (mock)", () => {
+  it("enqueueScrape queues a pending item and simulates pending → processing → completed", async () => {
+    vi.useFakeTimers();
+    try {
+      const infId = mockDB.influencer_profiles[0].id;
+      const item = await admin.enqueueScrape(infId);
+      expect(item).not.toBeNull();
+      expect(item?.status).toBe("pending");
+      expect(item?.influencer_id).toBe(infId);
+
+      const queued = (await admin.scrapingQueue()).find((q) => q.id === item?.id);
+      expect(queued?.status).toBe("pending");
+
+      await vi.advanceTimersByTimeAsync(1200);
+      expect(item?.status).toBe("processing");
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(item?.status).toBe("completed");
+      expect((await admin.scrapingQueue()).find((q) => q.id === item?.id)?.status).toBe(
+        "completed",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("subscribeScrapingQueue notifies on enqueue and cleanup unsubscribes", async () => {
+    vi.useFakeTimers();
+    try {
+      let calls = 0;
+      const unsub = admin.subscribeScrapingQueue(() => calls++);
+      await admin.enqueueScrape(mockDB.influencer_profiles[0].id);
+      expect(calls).toBe(1);
+
+      unsub();
+      // The simulated processing keeps emitting after cleanup — we must not hear it.
+      await vi.advanceTimersByTimeAsync(3000);
+      expect(calls).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("admin.reset", () => {
+  it("restores the seeded state after mutations", async () => {
+    const seededSubs = mockDB.subscriptions.length;
+    const seededQueue = mockDB.scraping_queue.length;
+    const userId = mockDB.brand_profiles[0].user_id;
+
+    await subscriptions.checkout(userId, "brand_pro");
+    mockDB.scraping_queue.push({
+      id: uid(),
+      influencer_id: mockDB.influencer_profiles[0].id,
+      status: "pending",
+      error: null,
+      created_at: new Date().toISOString(),
+    });
+    expect(mockDB.subscriptions.length).toBe(seededSubs + 1);
+
+    await admin.reset();
+    expect(mockDB.subscriptions.length).toBe(seededSubs);
+    expect(mockDB.scraping_queue.length).toBe(seededQueue);
   });
 });
 
