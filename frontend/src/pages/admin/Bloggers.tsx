@@ -62,10 +62,26 @@ function BloggerRow({
       </Badge>
       <span className="tabular">{formatNumber(inf.total_followers)}</span>
       <div className="flex items-center justify-end gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggleVisible} aria-label="Toggle visibility">
-          {inf.is_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onToggleVisible}
+          aria-label="Toggle visibility"
+        >
+          {inf.is_visible ? (
+            <Eye className="h-4 w-4" />
+          ) : (
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+          )}
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRefresh} aria-label="Refresh stats">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onRefresh}
+          aria-label="Refresh stats"
+        >
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
@@ -170,7 +186,12 @@ export default function AdminBloggers() {
 
       <div className="overflow-hidden rounded-xl border bg-card">
         {/* header */}
-        <div className={cn(GRID, "border-b bg-secondary/50 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground")}>
+        <div
+          className={cn(
+            GRID,
+            "border-b bg-secondary/50 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+          )}
+        >
           <span />
           <span className="text-center">#</span>
           <span>{t("league.blogger")}</span>
@@ -185,13 +206,21 @@ export default function AdminBloggers() {
               Clear search to drag-reorder the full list
             </div>
             {filtered.map((inf) => (
-              <div key={inf.id} className={cn(GRID, "border-b py-3 text-sm last:border-0 opacity-90")}>
+              <div
+                key={inf.id}
+                className={cn(GRID, "border-b py-3 text-sm last:border-0 opacity-90")}
+              >
                 <span />
                 <span className="text-center font-bold tabular text-muted-foreground">
                   {inf.league_rank ?? "—"}
                 </span>
                 <div className="flex min-w-0 items-center gap-3">
-                  <InfluencerAvatar name={inf.display_name} avatarUrl={inf.avatar_url} className="h-8 w-8" fallbackClassName="text-[11px]" />
+                  <InfluencerAvatar
+                    name={inf.display_name}
+                    avatarUrl={inf.avatar_url}
+                    className="h-8 w-8"
+                    fallbackClassName="text-[11px]"
+                  />
                   <span className="truncate font-medium">{inf.display_name}</span>
                 </div>
                 <Badge variant="secondary" className="h-5 w-fit px-2 py-0 leading-none">
@@ -199,10 +228,26 @@ export default function AdminBloggers() {
                 </Badge>
                 <span className="tabular">{formatNumber(inf.total_followers)}</span>
                 <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleVisible(inf.id, inf.is_visible)} aria-label="Toggle visibility">
-                    {inf.is_visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => toggleVisible(inf.id, inf.is_visible)}
+                    aria-label="Toggle visibility"
+                  >
+                    {inf.is_visible ? (
+                      <Eye className="h-4 w-4" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => refresh(inf.id)} aria-label="Refresh stats">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => refresh(inf.id)}
+                    aria-label="Refresh stats"
+                  >
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                 </div>
