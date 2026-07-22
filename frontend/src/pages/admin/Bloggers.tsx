@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { InfluencerAvatar } from "@/components/ui/avatar";
 import { PageHeader, PageLoader } from "@/components/common";
 import { admin, influencers } from "@/lib/api";
+import { USE_MOCK_DATA } from "@/lib/supabase";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/toast";
 import { formatNumber, cn } from "@/lib/utils";
@@ -124,9 +125,21 @@ export default function AdminBloggers() {
     await admin.setVisible(id, !current);
     load();
   };
-  const refresh = (id: string) => {
-    admin.enqueueScrape(id);
-    toast({ title: "Queued for stat refresh", variant: "success" });
+  const refresh = async (id: string) => {
+    try {
+      // Mock: enqueue this influencer. Live: triggers the scraping worker
+      // over already-pending rows (clients can't INSERT into scraping_queue).
+      await admin.enqueueScrape(id);
+      toast({
+        title: USE_MOCK_DATA ? "Queued for stat refresh" : "Stat refresh worker triggered",
+        variant: "success",
+      });
+    } catch (e) {
+      toast({
+        title: e instanceof Error ? e.message : "Couldn't trigger the stat refresh",
+        variant: "error",
+      });
+    }
   };
 
   if (loading) return <PageLoader />;

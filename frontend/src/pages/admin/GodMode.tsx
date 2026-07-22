@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common";
 import { admin, influencers } from "@/lib/api";
+import { USE_MOCK_DATA } from "@/lib/supabase";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useToast } from "@/components/ui/toast";
 
@@ -33,11 +34,20 @@ export default function GodMode() {
     }
   };
 
-  const resetData = () => {
+  const resetData = async () => {
     setBusy(true);
-    admin.reset();
-    toast({ title: "Mock database reset to seed", variant: "success" });
-    setTimeout(() => window.location.reload(), 600);
+    try {
+      await admin.reset();
+      toast({ title: "Mock database reset to seed", variant: "success" });
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e) {
+      toast({
+        title: e instanceof Error ? e.message : "Reset failed",
+        variant: "error",
+      });
+      setConfirmOpen(false);
+      setBusy(false);
+    }
   };
 
   return (
@@ -68,19 +78,24 @@ export default function GodMode() {
           </CardContent>
         </Card>
 
-        <Card className="dark:bg-card dark:border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RotateCcw className="h-5 w-5 text-destructive" /> Reset Data
-            </CardTitle>
-            <CardDescription>Restore the entire mock database to its seeded state.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={busy}>
-              <RotateCcw className="h-4 w-4" /> Reset Data
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Reset only exists for the in-memory mock DB — hidden on live Supabase. */}
+        {USE_MOCK_DATA && (
+          <Card className="dark:bg-card dark:border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RotateCcw className="h-5 w-5 text-destructive" /> Reset Data
+              </CardTitle>
+              <CardDescription>
+                Restore the entire mock database to its seeded state.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={busy}>
+                <RotateCcw className="h-4 w-4" /> Reset Data
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>

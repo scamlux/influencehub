@@ -31,7 +31,7 @@ import type {
 type Listener = (payload: any) => void;
 const channels = new Map<string, Set<Listener>>();
 
-export function subscribe(channel: string, cb: Listener): () => void {
+function subscribe(channel: string, cb: Listener): () => void {
   if (!channels.has(channel)) channels.set(channel, new Set());
   channels.get(channel)!.add(cb);
   return () => channels.get(channel)?.delete(cb);
@@ -727,9 +727,35 @@ export const brands = {
 // ─── subscriptions ───────────────────────────────────────────────────────────────
 export const subscriptions = {
   async forUser(userId: string): Promise<Subscription[]> {
-    return mockDB.subscriptions.filter((s) => s.user_id === userId);
+    if (!USE_MOCK_DATA && supabase) {
+      // RLS read_own_subscription (002_rls_policies.sql) scopes rows to the caller.
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Subscription[];
+    }
+    return mockDB.subscriptions
+      .filter((s) => s.user_id === userId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   },
   async activeFor(userId: string): Promise<Subscription | null> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "active");
+      if (error) throw new Error(error.message);
+      // expires_at is filtered client-side (same approach as featuredUserIds).
+      const now = Date.now();
+      const live = ((data ?? []) as Subscription[]).filter(
+        (s) => !s.expires_at || new Date(s.expires_at).getTime() > now,
+      );
+      return live[0] ?? null;
+    }
     return (
       mockDB.subscriptions.find(
         (s) =>
@@ -788,11 +814,6 @@ export const subscriptions = {
     });
     save();
     return sub;
-  },
-  async cancel(subId: string): Promise<void> {
-    const sub = mockDB.subscriptions.find((s) => s.id === subId);
-    if (sub) sub.status = "cancelled";
-    save();
   },
 };
 
@@ -1773,9 +1794,20 @@ export const admin = {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   },
-  // Note: scraping_queue has no client INSERT policy under RLS — real enqueue
-  // happens server-side (onboard-influencer / a refresh edge function). Mock only.
-  enqueueScrape(influencerId: string): ScrapingQueueItem {
+  // Live: scraping_queue has no client INSERT policy under RLS — enqueueing
+  // happens server-side, so this kicks the process-scraping-queue worker to
+  // drain whatever is already pending (its header documents manual invocation
+  // from the admin queue page). Mock: enqueue + simulated processing.
+  async enqueueScrape(influencerId?: string): Promise<ScrapingQueueItem | null> {
+    if (!USE_MOCK_DATA && supabase) {
+      const { data, error } = await supabase.functions.invoke("process-scraping-queue", {
+        body: { limit: 10 },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(String(data.error));
+      return null;
+    }
+    if (!influencerId) return null;
     const item: ScrapingQueueItem = {
       id: uid(),
       influencer_id: influencerId,
@@ -1798,6 +1830,16 @@ export const admin = {
       }, 1500);
     }, 1200);
     return item;
+  },
+  // Stream queue changes to the admin page. scraping_queue is not in the
+  // supabase_realtime publication (004_realtime.sql), so the live branch polls
+  // instead of subscribing; the mock branch reuses the in-memory event bus.
+  subscribeScrapingQueue(cb: () => void): () => void {
+    if (!USE_MOCK_DATA && supabase) {
+      const timer = setInterval(cb, 10_000);
+      return () => clearInterval(timer);
+    }
+    return subscribe("scraping-queue-admin", cb);
   },
   async setInfluencerRank(influencerId: string, rank: number) {
     if (!USE_MOCK_DATA && supabase) {
@@ -1845,10 +1887,10 @@ export const admin = {
     if (inf) inf.is_visible = visible;
     save();
   },
-  reset() {
+  // Mock-only: wipes the in-memory DB back to its seed. In live mode there is
+  // deliberately no equivalent — the UI hides the action (see GodMode.tsx).
+  async reset(): Promise<void> {
+    if (!USE_MOCK_DATA) throw new Error("Reset is mock-only");
     resetMockDB();
   },
 };
-
-// expose for /admin/god-mode
-export { mockDB };
