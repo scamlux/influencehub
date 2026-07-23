@@ -747,7 +747,10 @@ export const subscriptions = {
         .from("subscriptions")
         .select("*")
         .eq("user_id", userId)
-        .eq("status", "active");
+        .eq("status", "active")
+        // Deterministic pick when several rows are active (PostgREST row order
+        // is unspecified otherwise): newest first, matching forUser.
+        .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
       // expires_at is filtered client-side (same approach as featuredUserIds).
       const now = Date.now();
